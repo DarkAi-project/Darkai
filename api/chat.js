@@ -43,7 +43,9 @@ export default async function handler(req, res) {
         contents,
         generationConfig: {
           temperature: 0.8,
-          maxOutputTokens: 1024
+                    systemInstruction: { parts: [{ text: 'أجب دائمًا بالتفصيل والوضوح باللغة العربية، وقدم إجابات كاملة ومفيدة دون اختصار مبالغ فيه.' }] },
+
+          maxOutputTokens: 2048
         }
       })
     });
