@@ -39,16 +39,18 @@ export default async function handler(req, res) {
     const geminiRes = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+            body: JSON.stringify({
         contents,
+        systemInstruction: {
+          parts: [{ text: 'أجب دائمًا بالتفصيل والوضوح باللغة العربية، وقدم إجابات كاملة ومفيدة دون اختصار مبالغ فيه.' }]
+        },
         generationConfig: {
           temperature: 0.8,
-                    systemInstruction: { parts: [{ text: 'أجب دائمًا بالتفصيل والوضوح باللغة العربية، وقدم إجابات كاملة ومفيدة دون اختصار مبالغ فيه.' }] },
-
           maxOutputTokens: 2048
         }
       })
     });
+
 
     const data = await geminiRes.json();
 
