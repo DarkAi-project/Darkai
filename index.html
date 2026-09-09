@@ -286,15 +286,20 @@ function buildMessageEl(m){
   const avatar = m.role==='user'
     ? `<div class="avatar user">أنت</div>`
     : `<div class="avatar ai"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
+  const genImg = m.generatedImage
+    ? `<div class="msg-attachments"><img class="att-img" style="width:220px;height:220px;" src="data:${m.generatedImage.mimeType};base64,${m.generatedImage.data}"></div>`
+    : '';
   wrap.innerHTML = `
     ${avatar}
     <div class="bubble-wrap">
       <div class="role-label">${m.role==='user' ? 'أنت' : 'Dark AI'}</div>
       ${m.content ? `<div class="bubble">${escapeHtml(m.content)}</div>` : ''}
       ${attachmentsHtml(m.attachments)}
+      ${genImg}
     </div>`;
   return wrap;
 }
+
 
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -370,6 +375,13 @@ composer.addEventListener('keydown', (e)=>{
   }
 });
 
+function isImageRequest(text){
+  if(!text) return false;
+  const t = text.toLowerCase();
+  const keywords = ['ولد لي صورة','ولد صورة','ارسم','ارسملي','اعمل صورة','اعملي صورة','صمم صورة','صمم لي صورة','انشئ صورة','أنشئ صورة','صورة عن','صورة ل','generate image','draw','create an image','make an image','image of'];
+  return keywords.some(k => t.includes(k));
+}
+
 function handleSend(){
   const text = composer.value.trim();
   const attachments = selectedFiles.slice();
@@ -401,8 +413,21 @@ function handleSend(){
   scrollToBottom();
 
   const bubbleEl = typingEl.querySelector('.bubble');
-  let started = false;
 
+  if(isImageRequest(text) && attachments.length===0){
+    generateImageResponse(text).then(result=>{
+      typingEl.remove();
+      if(result.error){
+        conv.messages.push({ role:'ai', content: `⚠️ ${result.error}` });
+      } else {
+        conv.messages.push({ role:'ai', content: result.text || 'تفضلي، هاي الصورة:', generatedImage: { data: result.image, mimeType: result.mimeType } });
+      }
+      renderActiveChat();
+    });
+    return;
+  }
+
+  let started = false;
   getAIResponse(text, attachments, (partialText)=>{
     if(!started){
       bubbleEl.innerHTML = '';
@@ -416,6 +441,26 @@ function handleSend(){
     renderActiveChat();
   });
 }
+
+const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
+
+async function generateImageResponse(prompt){
+  try {
+    const res = await fetch(IMAGE_GEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      return { error: data.error || 'خطأ غير معروف' };
+    }
+    return data;
+  } catch(err){
+    return { error: 'تعذر الاتصال بالسيرفر' };
+  }
+}
+
 
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 
