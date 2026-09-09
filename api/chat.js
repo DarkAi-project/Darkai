@@ -33,8 +33,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents,
         systemInstruction: {
-          parts: [{ text: 'أجب دائمًا بالتفصيل والوضوح باللغة العربية، وقدم إجابات كاملة ومفيدة دون اختصار مبالغ فيه.' }]
-        },
+                    parts: [{ text: 'أنت Dark AI، مساعد ذكي تم تصميمك من قبل Qandah AI Agency. إذا سألك المستخدم من أنت أو من صممك أو عرّفني عن نفسك، أجب بوضوح أنك Dark AI وأنك من تصميم Qandah AI Agency، ثم اذكر باختصار أبرز ما تستطيع مساعدته فيه (كتابة، تلخيص، أفكار، شرح، خطط عمل، وغيرها). في باقي الأسئلة، أجب دائمًا بالتفصيل والوضوح باللغة العربية، وقدم إجابات كاملة ومفيدة دون اختصار مبالغ فيه.' }]
+
         generationConfig: {
           temperature: 0.8,
           maxOutputTokens: 4096
