@@ -1,4 +1,3 @@
-// api/chat.js
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -25,6 +24,8 @@ export default async function handler(req, res) {
       parts: [{ text: m.content }]
     }));
 
+    const systemPrompt = "انت Dark AI، مساعد ذكي تم تصميمك من قبل Qandah AI Agency. اذا سالك المستخدم من انت او من صممك او عرفني عن نفسك، اجب بوضوح انك Dark AI وانك من تصميم Qandah AI Agency، ثم اذكر باختصار ابرز ما تستطيع مساعدته فيه (كتابة، تلخيص، افكار، شرح، خطط عمل، وغيرها). في باقي الاسئلة، اجب دائما بالتفصيل والوضوح باللغة العربية، وقدم اجابات كاملة ومفيدة دون اختصار مبالغ فيه.";
+
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     const geminiRes = await fetch(geminiUrl, {
@@ -33,8 +34,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         contents,
         systemInstruction: {
-                    parts: [{ text: 'أنت Dark AI، مساعد ذكي تم تصميمك من قبل Qandah AI Agency. إذا سألك المستخدم من أنت أو من صممك أو عرّفني عن نفسك، أجب بوضوح أنك Dark AI وأنك من تصميم Qandah AI Agency، ثم اذكر باختصار أبرز ما تستطيع مساعدته فيه (كتابة، تلخيص، أفكار، شرح، خطط عمل، وغيرها). في باقي الأسئلة، أجب دائمًا بالتفصيل والوضوح باللغة العربية، وقدم إجابات كاملة ومفيدة دون اختصار مبالغ فيه.' }]
-
+          parts: [{ text: systemPrompt }]
+        },
         generationConfig: {
           temperature: 0.8,
           maxOutputTokens: 4096
