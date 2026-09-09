@@ -513,7 +513,7 @@ function handleSend(){
   chatInner.appendChild(typingEl);
   scrollToBottom();
 
-    const bubbleEl = typingEl.querySelector('.bubble');
+  const bubbleEl = typingEl.querySelector('.bubble');
   let started = false;
 
   getAIResponse(text, (partialText)=>{
@@ -525,14 +525,10 @@ function handleSend(){
     scrollToBottom();
   }).then(reply=>{
     conv.messages.push({ role:'ai', content: reply });
-    if(started){
-      typingEl.remove();
-      renderActiveChat();
-    } else {
-      typingEl.remove();
-      renderActiveChat();
-    }
+    typingEl.remove();
+    renderActiveChat();
   });
+}
 
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 
@@ -581,5 +577,6 @@ function closeSidebarMobile(){
 
 startNewChat();
 </script>
+
 </body>
 </html>
