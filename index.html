@@ -513,16 +513,30 @@ function handleSend(){
   chatInner.appendChild(typingEl);
   scrollToBottom();
 
-  getAIResponse(text).then(reply=>{
-    typingEl.remove();
+    const bubbleEl = typingEl.querySelector('.bubble');
+  let started = false;
+
+  getAIResponse(text, (partialText)=>{
+    if(!started){
+      bubbleEl.innerHTML = '';
+      started = true;
+    }
+    bubbleEl.textContent = partialText;
+    scrollToBottom();
+  }).then(reply=>{
     conv.messages.push({ role:'ai', content: reply });
-    renderActiveChat();
+    if(started){
+      typingEl.remove();
+      renderActiveChat();
+    } else {
+      typingEl.remove();
+      renderActiveChat();
+    }
   });
-}
 
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 
-async function getAIResponse(userText){
+async function getAIResponse(userText, onChunk){
   const conv = getActiveConv();
   const history = conv ? conv.messages.map(m => ({ role: m.role, content: m.content })) : [{ role:'user', content:userText }];
 
@@ -532,11 +546,25 @@ async function getAIResponse(userText){
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: history })
     });
-    const data = await res.json();
+
     if(!res.ok){
+      const data = await res.json().catch(()=>({}));
       return `⚠️ حدث خطأ من السيرفر: ${data.error || 'خطأ غير معروف'}`;
     }
-    return data.reply || 'ما وصل رد من السيرفر، جرب مرة ثانية.';
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      fullText += chunk;
+      if(onChunk) onChunk(fullText);
+    }
+
+    return fullText || 'ما وصل رد من السيرفر، جرب مرة ثانية.';
   } catch(err){
     return '⚠️ تعذر الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.';
   }
