@@ -374,6 +374,17 @@ composer.addEventListener('keydown', (e)=>{
   }
 });
 
+function normalizeArabic(s){
+  return s.replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+}
+
+function looksLikeImageRequest(text){
+  if(!text) return false;
+  const t = normalizeArabic(text.toLowerCase());
+  const keywords = ['صوره','رسمه','ارسم','رسم لي','رسمي لي','اعمل صوره','اعملي صوره','سوي صوره','سويلي صوره','صمم صوره','صممي صوره','انشئ صوره','ولد صوره','draw','generate image','create an image','make an image','image of','picture of'];
+  return keywords.some(k => t.includes(k));
+}
+
 function handleSend(){
   const text = composer.value.trim();
   const attachments = selectedFiles.slice();
@@ -420,10 +431,14 @@ function handleSend(){
     return;
   }
 
+  const localGuess = looksLikeImageRequest(text);
+
   detectIntent(text).then(intent=>{
-    if(intent.isImageRequest){
+    const shouldGenerateImage = localGuess || intent.isImageRequest;
+    if(shouldGenerateImage){
       const seed = Math.floor(Math.random()*100000);
-      const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(intent.englishPrompt || text)}?width=768&height=768&seed=${seed}&nologo=true`;
+      const promptForImage = intent.englishPrompt || text;
+      const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(promptForImage)}?width=768&height=768&seed=${seed}&nologo=true`;
       typingEl.remove();
       conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
       renderActiveChat();
@@ -442,6 +457,7 @@ function handleSend(){
     });
   });
 }
+
 
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
