@@ -414,13 +414,14 @@ function handleSend(){
 
   const bubbleEl = typingEl.querySelector('.bubble');
 
-    if(isImageRequest(text) && attachments.length===0){
-    const seed = Math.floor(Math.random()*100000);
-        const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(text)}?width=768&height=768&seed=${seed}&nologo=true`;
-
-    typingEl.remove();
-    conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
-    renderActiveChat();
+      if(isImageRequest(text) && attachments.length===0){
+    translateForImage(text).then(englishPrompt=>{
+      const seed = Math.floor(Math.random()*100000);
+      const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(englishPrompt)}?width=768&height=768&seed=${seed}&nologo=true`;
+      typingEl.remove();
+      conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
+      renderActiveChat();
+    });
     return;
   }
 
@@ -501,6 +502,29 @@ function toggleSidebar(){
 }
 function closeSidebarMobile(){
   document.getElementById('sidebar').classList.remove('open');
+}
+async function translateForImage(arabicText){
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role:'user', content: `Translate this into a short, simple English image description (max 15 words). Reply with only the translated description, nothing else: "${arabicText}"` }]
+      })
+    });
+    if(!res.ok) return arabicText;
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+      fullText += decoder.decode(value, { stream:true });
+    }
+    return fullText.trim() || arabicText;
+  } catch(err){
+    return arabicText;
+  }
 }
 
 startNewChat();
