@@ -300,7 +300,6 @@ function buildMessageEl(m){
   return wrap;
 }
 
-
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -375,13 +374,6 @@ composer.addEventListener('keydown', (e)=>{
   }
 });
 
-function isImageRequest(text){
-  if(!text) return false;
-  const t = text.toLowerCase();
-  const keywords = ['ولد لي صورة','ولد صورة','ارسم','ارسملي','اعمل صورة','اعملي صورة','صمم صورة','صمم لي صورة','انشئ صورة','أنشئ صورة','صورة عن','صورة ل','generate image','draw','create an image','make an image','image of'];
-  return keywords.some(k => t.includes(k));
-}
-
 function handleSend(){
   const text = composer.value.trim();
   const attachments = selectedFiles.slice();
@@ -414,35 +406,46 @@ function handleSend(){
 
   const bubbleEl = typingEl.querySelector('.bubble');
 
-      if(isImageRequest(text) && attachments.length===0){
-    translateForImage(text).then(englishPrompt=>{
-      const seed = Math.floor(Math.random()*100000);
-      const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(englishPrompt)}?width=768&height=768&seed=${seed}&nologo=true`;
+  if(attachments.length > 0){
+    let started = false;
+    getAIResponse(text, attachments, (partialText)=>{
+      if(!started){ bubbleEl.innerHTML = ''; started = true; }
+      bubbleEl.textContent = partialText;
+      scrollToBottom();
+    }).then(reply=>{
+      conv.messages.push({ role:'ai', content: reply });
       typingEl.remove();
-      conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
       renderActiveChat();
     });
     return;
   }
 
-
-  let started = false;
-  getAIResponse(text, attachments, (partialText)=>{
-    if(!started){
-      bubbleEl.innerHTML = '';
-      started = true;
+  detectIntent(text).then(intent=>{
+    if(intent.isImageRequest){
+      const seed = Math.floor(Math.random()*100000);
+      const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(intent.englishPrompt || text)}?width=768&height=768&seed=${seed}&nologo=true`;
+      typingEl.remove();
+      conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
+      renderActiveChat();
+      return;
     }
-    bubbleEl.textContent = partialText;
-    scrollToBottom();
-  }).then(reply=>{
-    conv.messages.push({ role:'ai', content: reply });
-    typingEl.remove();
-    renderActiveChat();
+
+    let started = false;
+    getAIResponse(text, attachments, (partialText)=>{
+      if(!started){ bubbleEl.innerHTML = ''; started = true; }
+      bubbleEl.textContent = partialText;
+      scrollToBottom();
+    }).then(reply=>{
+      conv.messages.push({ role:'ai', content: reply });
+      typingEl.remove();
+      renderActiveChat();
+    });
   });
 }
 
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
+const INTENT_URL = 'https://darkai-delta.vercel.app/api/detect-intent';
 
 async function getAIResponse(userText, attachments, onChunk){
   const conv = getActiveConv();
@@ -478,20 +481,17 @@ async function getAIResponse(userText, attachments, onChunk){
   }
 }
 
-async function generateImageResponse(prompt){
+async function detectIntent(text){
   try {
-    const res = await fetch(IMAGE_GEN_URL, {
+    const res = await fetch(INTENT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ text })
     });
     const data = await res.json();
-    if(!res.ok){
-      return { error: data.error || 'خطأ غير معروف' };
-    }
     return data;
   } catch(err){
-    return { error: 'تعذر الاتصال بالسيرفر' };
+    return { isImageRequest: false, englishPrompt: '' };
   }
 }
 
@@ -502,29 +502,6 @@ function toggleSidebar(){
 }
 function closeSidebarMobile(){
   document.getElementById('sidebar').classList.remove('open');
-}
-async function translateForImage(arabicText){
-  try {
-    const res = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role:'user', content: `Translate this into a short, simple English image description (max 15 words). Reply with only the translated description, nothing else: "${arabicText}"` }]
-      })
-    });
-    if(!res.ok) return arabicText;
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = '';
-    while(true){
-      const { done, value } = await reader.read();
-      if(done) break;
-      fullText += decoder.decode(value, { stream:true });
-    }
-    return fullText.trim() || arabicText;
-  } catch(err){
-    return arabicText;
-  }
 }
 
 startNewChat();
