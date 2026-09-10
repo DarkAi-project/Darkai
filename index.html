@@ -300,7 +300,6 @@ function buildMessageEl(m){
   return wrap;
 }
 
-
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -442,27 +441,8 @@ function handleSend(){
   });
 }
 
-const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
-
-async function generateImageResponse(prompt){
-  try {
-    const res = await fetch(IMAGE_GEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
-    });
-    const data = await res.json();
-    if(!res.ok){
-      return { error: data.error || 'خطأ غير معروف' };
-    }
-    return data;
-  } catch(err){
-    return { error: 'تعذر الاتصال بالسيرفر' };
-  }
-}
-
-
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
+const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
 
 async function getAIResponse(userText, attachments, onChunk){
   const conv = getActiveConv();
@@ -495,6 +475,23 @@ async function getAIResponse(userText, attachments, onChunk){
     return fullText || 'ما وصل رد من السيرفر، جرب مرة ثانية.';
   } catch(err){
     return '⚠️ تعذر الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.';
+  }
+}
+
+async function generateImageResponse(prompt){
+  try {
+    const res = await fetch(IMAGE_GEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      return { error: data.error || 'خطأ غير معروف' };
+    }
+    return data;
+  } catch(err){
+    return { error: 'تعذر الاتصال بالسيرفر' };
   }
 }
 
