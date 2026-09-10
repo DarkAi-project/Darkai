@@ -287,7 +287,7 @@ function buildMessageEl(m){
     ? `<div class="avatar user">أنت</div>`
     : `<div class="avatar ai"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
   const genImg = m.generatedImage
-    ? `<div class="msg-attachments"><img class="att-img" style="width:220px;height:220px;" src="data:${m.generatedImage.mimeType};base64,${m.generatedImage.data}"></div>`
+    ? `<div class="msg-attachments"><img class="att-img" style="width:220px;height:220px;" src="${m.generatedImage.url}"></div>`
     : '';
   wrap.innerHTML = `
     ${avatar}
@@ -299,6 +299,7 @@ function buildMessageEl(m){
     </div>`;
   return wrap;
 }
+
 
 function escapeHtml(s){
   return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -413,18 +414,15 @@ function handleSend(){
 
   const bubbleEl = typingEl.querySelector('.bubble');
 
-  if(isImageRequest(text) && attachments.length===0){
-    generateImageResponse(text).then(result=>{
-      typingEl.remove();
-      if(result.error){
-        conv.messages.push({ role:'ai', content: `⚠️ ${result.error}` });
-      } else {
-        conv.messages.push({ role:'ai', content: result.text || 'تفضلي، هاي الصورة:', generatedImage: { data: result.image, mimeType: result.mimeType } });
-      }
-      renderActiveChat();
-    });
+    if(isImageRequest(text) && attachments.length===0){
+    const seed = Math.floor(Math.random()*100000);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=768&height=768&seed=${seed}&nologo=true`;
+    typingEl.remove();
+    conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
+    renderActiveChat();
     return;
   }
+
 
   let started = false;
   getAIResponse(text, attachments, (partialText)=>{
