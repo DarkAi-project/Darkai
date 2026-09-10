@@ -10,29 +10,31 @@ export default async function handler(req, res) {
   try {
     const { text } = req.body;
     if (!text) {
-      return res.status(400).json({ isImageRequest: false, englishPrompt: '' });
+      return res.status(200).json({ isImageRequest: false, englishPrompt: '' });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ error: 'مفتاح Gemini غير مُعرَّف' });
+      return res.status(200).json({ isImageRequest: false, englishPrompt: '' });
     }
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
-    const prompt = `You are an intent classifier. The user sent this message (could be Arabic or English): "${text}"
+    const prompt = `Message: "${text}"
 
-Determine if the user is asking to GENERATE, DRAW, CREATE, or MAKE an image/picture/drawing (not asking to analyze an uploaded image, just asking to create a new one).
+Is this message asking to GENERATE, DRAW, CREATE, DESIGN, or MAKE a new image/picture/drawing? (not analyzing an existing uploaded image)
 
-Reply with ONLY valid JSON, nothing else, in this exact format:
-{"isImageRequest": true or false, "englishPrompt": "short english description of the image if isImageRequest is true, otherwise empty string"}`;
+Respond with ONLY this JSON format, no explanation, no markdown, no extra text:
+{"isImageRequest": true, "englishPrompt": "a short english image description"}
+or
+{"isImageRequest": false, "englishPrompt": ""}`;
 
     const geminiRes = await fetch(geminiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 200 }
+        generationConfig: { temperature: 0, maxOutputTokens: 150 }
       })
     });
 
@@ -41,14 +43,14 @@ Reply with ONLY valid JSON, nothing else, in this exact format:
       return res.status(200).json({ isImageRequest: false, englishPrompt: '' });
     }
 
-    let raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    let raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
-    let parsed;
-    try {
-      parsed = JSON.parse(raw);
-    } catch(e) {
-      parsed = { isImageRequest: false, englishPrompt: '' };
+    const match = raw.match(/\{[\s\S]*\}/);
+    let parsed = { isImageRequest: false, englishPrompt: '' };
+    if (match) {
+      try {
+        parsed = JSON.parse(match[0]);
+      } catch(e) {}
     }
 
     return res.status(200).json({
