@@ -416,7 +416,8 @@ function handleSend(){
 
     if(isImageRequest(text) && attachments.length===0){
     const seed = Math.floor(Math.random()*100000);
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=768&height=768&seed=${seed}&nologo=true`;
+        const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(text)}?width=768&height=768&seed=${seed}&nologo=true`;
+
     typingEl.remove();
     conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
     renderActiveChat();
