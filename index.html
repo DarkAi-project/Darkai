@@ -436,12 +436,16 @@ function handleSend(){
   detectIntent(text).then(intent=>{
     const shouldGenerateImage = localGuess || intent.isImageRequest;
     if(shouldGenerateImage){
-      const seed = Math.floor(Math.random()*100000);
       const promptForImage = intent.englishPrompt || text;
-      const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(promptForImage)}?width=768&height=768&seed=${seed}&nologo=true`;
-      typingEl.remove();
-      conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: imageUrl } });
-      renderActiveChat();
+      generateImage(promptForImage).then(result=>{
+        typingEl.remove();
+        if(result.error){
+          conv.messages.push({ role:'ai', content: `⚠️ ${result.error}` });
+        } else {
+          conv.messages.push({ role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: result.url } });
+        }
+        renderActiveChat();
+      });
       return;
     }
 
@@ -511,6 +515,23 @@ async function detectIntent(text){
   }
 }
 
+async function generateImage(prompt){
+  try {
+    const res = await fetch(IMAGE_GEN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.image){
+      return { error: data.error || 'ما قدر يولد الصورة، جرب وصف مختلف.' };
+    }
+    return { url: `data:${data.mimeType || 'image/png'};base64,${data.image}` };
+  } catch(err){
+    return { error: 'تعذر الاتصال بالسيرفر لتوليد الصورة.' };
+  }
+}
+
 function toggleSidebar(){
   const sb = document.getElementById('sidebar');
   if(window.innerWidth<=820){ sb.classList.toggle('open'); }
@@ -520,7 +541,6 @@ function closeSidebarMobile(){
   document.getElementById('sidebar').classList.remove('open');
 }
 
-startNewChat();
 </script>
 </body>
 </html>
