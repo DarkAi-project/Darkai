@@ -14,47 +14,45 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'لازم ترسل وصف نصي للصورة' });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: 'مفتاح Gemini غير مُعرَّف على السيرفر' });
+    const hfToken = process.env.HF_TOKEN;
+    if (!hfToken) {
+      return res.status(500).json({ error: 'مفتاح Hugging Face غير مُعرَّف على السيرفر' });
     }
 
-    const imageUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+    const modelUrl = 'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell';
 
-    const imgRes = await fetch(imageUrl, {
+    const imgRes = await fetch(modelUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-      })
+      headers: {
+        Authorization: `Bearer ${hfToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ inputs: prompt })
     });
 
-    const data = await imgRes.json();
+    // لو صار خطأ، Hugging Face بيرجع JSON فيه تفاصيل الخطأ
+    const contentType = imgRes.headers.get('content-type') || '';
 
-    if (!imgRes.ok) {
-      return res.status(imgRes.status).json({ error: data?.error?.message || 'خطأ أثناء توليد الصورة' });
+    if (!imgRes.ok || contentType.includes('application/json')) {
+      const errData = await imgRes.json().catch(() => ({}));
+      const message =
+        errData?.error ||
+        (imgRes.status === 503
+          ? 'النموذج عم يشتغل حالياً، جربي كمان بعد ثواني'
+          : 'خطأ أثناء توليد الصورة');
+      return res.status(imgRes.status === 503 ? 503 : imgRes.status).json({ error: message });
     }
 
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    let imageData = null;
-    let mimeType = null;
-    let textReply = '';
-
-    for (const part of parts) {
-      if (part.inlineData) {
-        imageData = part.inlineData.data;
-        mimeType = part.inlineData.mimeType;
-      } else if (part.text) {
-        textReply += part.text;
-      }
-    }
+    // Hugging Face بيرجع بايتات الصورة مباشرة (مش JSON)
+    const arrayBuffer = await imgRes.arrayBuffer();
+    const imageData = Buffer.from(arrayBuffer).toString('base64');
+    const mimeType = contentType.includes('image/') ? contentType : 'image/png';
 
     if (!imageData) {
       return res.status(500).json({ error: 'ما قدر يولد الصورة، جرب وصف مختلف.' });
     }
 
-    return res.status(200).json({ image: imageData, mimeType, text: textReply });
+    return res.status(200).json({ image: imageData, mimeType, text: '' });
 
   } catch (err) {
     console.error('Server error:', err);
