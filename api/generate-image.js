@@ -19,7 +19,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'مفتاح Hugging Face غير مُعرَّف على السيرفر' });
     }
 
-    const modelUrl = 'https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-dev';
+    const modelUrl = 'https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-3-medium-diffusers';
+
 
 
     const imgRes = await fetch(modelUrl, {
