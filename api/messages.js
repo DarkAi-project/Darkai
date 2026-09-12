@@ -34,7 +34,7 @@ export default async function handler(req, res) {
   const sql = neon(dbUrl);
 
   try {
-    const { conversationId, role, content, imageData, imageMimeType } = req.body;
+    const { conversationId, role, content, imageData, imageMimeType, attachments } = req.body;
 
     if (!conversationId || !role) {
       return res.status(400).json({ error: 'بيانات ناقصة' });
@@ -47,9 +47,11 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'ما إلك صلاحية على هاي المحادثة' });
     }
 
+    const attachmentsJson = attachments && attachments.length > 0 ? JSON.stringify(attachments) : null;
+
     const inserted = await sql`
-      INSERT INTO messages (conversation_id, role, content, image_data, image_mime_type)
-      VALUES (${conversationId}, ${role}, ${content || null}, ${imageData || null}, ${imageMimeType || null})
+      INSERT INTO messages (conversation_id, role, content, image_data, image_mime_type, attachments_json)
+      VALUES (${conversationId}, ${role}, ${content || null}, ${imageData || null}, ${imageMimeType || null}, ${attachmentsJson})
       RETURNING id, created_at
     `;
 
