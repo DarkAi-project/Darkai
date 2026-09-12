@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       let messages = [];
       if (conversationIds.length > 0) {
         messages = await sql`
-          SELECT id, conversation_id, role, content, image_data, image_mime_type, created_at
+          SELECT id, conversation_id, role, content, image_data, image_mime_type, attachments_json, created_at
           FROM messages
           WHERE conversation_id = ANY(${conversationIds})
           ORDER BY created_at ASC
@@ -53,14 +53,21 @@ export default async function handler(req, res) {
         title: conv.title,
         messages: messages
           .filter(m => m.conversation_id === conv.id)
-          .map(m => ({
-            id: m.id,
-            role: m.role,
-            content: m.content,
-            generatedImage: m.image_data
-              ? { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` }
-              : null
-          }))
+          .map(m => {
+            let attachments = [];
+            if (m.attachments_json) {
+              try { attachments = JSON.parse(m.attachments_json); } catch (e) {}
+            }
+            return {
+              id: m.id,
+              role: m.role,
+              content: m.content,
+              attachments,
+              generatedImage: m.image_data
+                ? { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` }
+                : null
+            };
+          })
       }));
 
       return res.status(200).json({ conversations: result });
