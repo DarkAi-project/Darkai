@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dark AI — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07070d; --bg-elevated:#0c0c17; --surface:#13131f; --surface-hover:#1b1b2a;
+    --border:#232235; --border-soft:#1a1a28; --text:#eeecf5; --text-dim:#9490ab;
+    --text-faint:#565370; --purple:#b06bff; --purple-deep:#7c3aed; --indigo:#6d5ef0; --green:#3ddc97;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{ font-family:'Cairo',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:8px;}
+
+  .auth-screen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .auth-card{ width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 26px; }
+  .auth-title{ text-align:center; font-size:20px; font-weight:800; margin-bottom:6px; color:var(--purple); }
+  .auth-sub{ text-align:center; font-size:13px; color:var(--text-dim); margin-bottom:24px; }
+  .auth-field{ margin-bottom:14px; }
+  .auth-field label{ display:block; font-size:12.5px; color:var(--text-dim); margin-bottom:6px; font-weight:600; }
+  .auth-field input{ width:100%; background:var(--bg-elevated); border:1px solid var(--border); border-radius:11px; padding:11px 14px; color:var(--text); font-family:inherit; font-size:14px; outline:none; }
+  .auth-error{ background:rgba(255,80,80,.1); border:1px solid rgba(255,80,80,.3); color:#ff8a8a; font-size:12.5px; padding:9px 12px; border-radius:10px; margin-bottom:14px; display:none; }
+  .auth-submit{ width:100%; background:linear-gradient(135deg,var(--purple),var(--indigo)); border:none; color:#fff; font-family:inherit; font-size:14.5px; font-weight:700; padding:12px; border-radius:12px; cursor:pointer; }
+  .auth-submit:disabled{ opacity:.5; }
+
+  .dash{ display:none; padding:20px 16px 60px; max-width:1000px; margin:0 auto; }
+  .dash.visible{ display:block; }
+  .dash-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+  .dash-title{ font-size:19px; font-weight:800; color:var(--purple); }
+  .logout-link{ font-size:12.5px; color:var(--text-faint); cursor:pointer; }
+  .stats-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:26px; }
+  .stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px; }
+  .stat-num{ font-size:24px; font-weight:800; color:var(--text); }
+  .stat-label{ font-size:11.5px; color:var(--text-dim); margin-top:4px; }
+  .section-title{ font-size:14px; font-weight:700; color:var(--text-dim); margin:24px 0 10px; }
+  .user-row{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px; cursor:pointer; }
+  .user-row:active{ background:var(--surface-hover); }
+  .user-email{ font-size:13.5px; font-weight:700; }
+  .user-meta{ font-size:11.5px; color:var(--text-faint); margin-top:4px; display:flex; gap:12px; flex-wrap:wrap; }
+  .back-btn{ font-size:12.5px; color:var(--purple); cursor:pointer; margin-bottom:14px; display:inline-block; }
+  .conv-card{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px; cursor:pointer; }
+  .conv-title{ font-size:13.5px; font-weight:700; }
+  .conv-meta{ font-size:11px; color:var(--text-faint); margin-top:3px; }
+  .msg-view{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+  .msg-role{ font-size:11px; font-weight:700; color:var(--purple); margin-bottom:5px; }
+  .msg-content{ font-size:13.5px; line-height:1.7; white-space:pre-wrap; }
+  .msg-img{ max-width:200px; border-radius:10px; margin-top:8px; display:block; }
+  .loading{ text-align:center; color:var(--text-faint); padding:30px; font-size:13px; }
+  .empty{ text-align:center; color:var(--text-faint); padding:30px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="auth-screen" id="authScreen">
+  <div class="auth-card">
+    <div class="auth-title">Dark AI — Admin</div>
+    <div class="auth-sub">فوتي بحساب المالك</div>
+    <div class="auth-error" id="authError"></div>
+    <form id="authForm">
+      <div class="auth-field">
+        <label>الإيميل</label>
+        <input type="email" id="authEmail" required>
+      </div>
+      <div class="auth-field">
+        <label>الباسورد</label>
+        <input type="password" id="authPassword" required>
+      </div>
+      <button type="submit" class="auth-submit" id="authSubmitBtn">دخول</button>
+    </form>
+  </div>
+</div>
+
+<div class="dash" id="dash">
+  <div class="dash-header">
+    <div class="dash-title">Dark AI — لوحة التحكم</div>
+    <div class="logout-link" onclick="logout()">خروج</div>
+  </div>
+
+  <div id="view-stats">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="section-title">المستخدمين</div>
+    <div id="usersList"><div class="loading">جاري التحميل...</div></div>
+  </div>
+
+  <div id="view-conversations" style="display:none;">
+    <div class="back-btn" onclick="showStatsView()">← رجوع لكل المستخدمين</div>
+    <div class="section-title" id="convUserLabel"></div>
+    <div id="convList"></div>
+  </div>
+
+  <div id="view-messages" style="display:none;">
+    <div class="back-btn" onclick="showConversationsView()">← رجوع للمحادثات</div>
+    <div class="section-title" id="msgConvLabel"></div>
+    <div id="msgList"></div>
+  </div>
+</div>
+
+<script>
+const LOGIN_URL = 'https://darkai-delta.vercel.app/api/auth/login';
+const ADMIN_URL = 'https://darkai-delta.vercel.app/api/admin';
+
+let authToken = localStorage.getItem('darkai_admin_token') || null;
+let currentUserId = null;
+let currentUserEmail = null;
+let currentConvId = null;
+
+const authScreen = document.getElementById('authScreen');
+const dash = document.getElementById('dash');
+const authForm = document.getElementById('authForm');
+const authError = document.getElementById('authError');
+const authSubmitBtn = document.getElementById('authSubmitBtn');
+
+async function init(){
+  if(authToken){
+    const ok = await loadStats();
+    if(ok){ showDash(); return; }
+    localStorage.removeItem('darkai_admin_token');
+    authToken = null;
+  }
+  showAuth();
+}
+
+function showAuth(){
+  authScreen.style.display = 'flex';
+  dash.classList.remove('visible');
+}
+function showDash(){
+  authScreen.style.display = 'none';
+  dash.classList.add('visible');
+}
+
+authForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  authError.style.display = 'none';
+  authSubmitBtn.disabled = true;
+  authSubmitBtn.textContent = 'لحظة...';
+
+  try {
+    const res = await fetch(LOGIN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: document.getElementById('authEmail').value.trim(),
+        password: document.getElementById('authPassword').value
+      })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      authError.textContent = data.error || 'خطأ بتسجيل الدخول';
+      authError.style.display = 'block';
+      authSubmitBtn.disabled = false;
+      authSubmitBtn.textContent = 'دخول';
+      return;
+    }
+    authToken = data.token;
+    localStorage.setItem('darkai_admin_token', authToken);
+
+    const ok = await loadStats();
+    if(!ok){
+      authError.textContent = 'هاد الحساب ما عنده صلاحية Admin';
+      authError.style.display = 'block';
+      localStorage.removeItem('darkai_admin_token');
+      authToken = null;
+      authSubmitBtn.disabled = false;
+      authSubmitBtn.textContent = 'دخول';
+      return;
+    }
+    showDash();
+  } catch(err){
+    authError.textContent = 'تعذر الاتصال بالسيرفر';
+    authError.style.display = 'block';
+  }
+  authSubmitBtn.disabled = false;
+  authSubmitBtn.textContent = 'دخول';
+});
+
+function logout(){
+  localStorage.removeItem('darkai_admin_token');
+  authToken = null;
+  showAuth();
+}
+
+async function adminFetch(action, params){
+  const qs = new URLSearchParams({ action, ...(params||{}) });
+  const res = await fetch(`${ADMIN_URL}?${qs.toString()}`, {
+    headers: { 'Authorization': `Bearer ${authToken}` }
+  });
+  if(!res.ok) return null;
+  return res.json();
+}
+
+async function loadStats(){
+  const data = await adminFetch('stats');
+  if(!data) return false;
+  const statsGrid = document.getElementById('statsGrid');
+  statsGrid.innerHTML = `
+    <div class="stat-card"><div class="stat-num">${data.totalUsers}</div><div class="stat-label">مستخدم</div></div>
+    <div class="stat-card"><div class="stat-num">${data.totalConversations}</div><div class="stat-label">محادثة</div></div>
+    <div class="stat-card"><div class="stat-num">${data.totalMessages}</div><div class="stat-label">رسالة</div></div>
+    <div class="stat-card"><div class="stat-num">${data.totalImagesGenerated}</div><div class="stat-label">صورة مولّدة</div></div>
+    <div class="stat-card"><div class="stat-num">${data.newUsersToday}</div><div class="stat-label">مستخدم جديد اليوم</div></div>
+  `;
+  await loadUsers();
+  return true;
+}
+
+async function loadUsers(){
+  const data = await adminFetch('users');
+  const usersList = document.getElementById('usersList');
+  if(!data || !data.users || data.users.length === 0){
+    usersList.innerHTML = '<div class="empty">ما في مستخدمين لسا</div>';
+    return;
+  }
+  usersList.innerHTML = data.users.map(u => `
+    <div class="user-row" onclick="openUser(${u.id}, '${escapeAttr(u.email)}')">
+      <div class="user-email">${escapeHtml(u.email)}</div>
+      <div class="user-meta">
+        <span>${u.conversation_count} محادثة</span>
+        <span>${u.message_count} رسالة</span>
+        <span>انضم ${formatDate(u.created_at)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showStatsView(){
+  document.getElementById('view-stats').style.display = 'block';
+  document.getElementById('view-conversations').style.display = 'none';
+  document.getElementById('view-messages').style.display = 'none';
+}
+
+function showConversationsView(){
+  document.getElementById('view-stats').style.display = 'none';
+  document.getElementById('view-conversations').style.display = 'block';
+  document.getElementById('view-messages').style.display = 'none';
+}
+
+async function openUser(userId, email){
+  currentUserId = userId;
+  currentUserEmail = email;
+  document.getElementById('convUserLabel').textContent = `محادثات ${email}`;
+  document.getElementById('convList').innerHTML = '<div class="loading">جاري التحميل...</div>';
+  document.getElementById('view-stats').style.display = 'none';
+  document.getElementById('view-conversations').style.display = 'block';
+  document.getElementById('view-messages').style.display = 'none';
+
+  const data = await adminFetch('conversations', { userId });
+  const convList = document.getElementById('convList');
+  if(!data || !data.conversations || data.conversations.length === 0){
+    convList.innerHTML = '<div class="empty">ما في محادثات لهاد المستخدم</div>';
+    return;
+  }
+  convList.innerHTML = data.conversations.map(c => `
+    <div class="conv-card" onclick="openConversation(${c.id}, '${escapeAttr(c.title)}')">
+      <div class="conv-title">${escapeHtml(c.title)}</div>
+      <div class="conv-meta">${c.messages.length} رسالة · ${formatDate(c.created_at)}</div>
+    </div>
+  `).join('');
+}
+
+async function openConversation(convId, title){
+  currentConvId = convId;
+  document.getElementById('msgConvLabel').textContent = title;
+  document.getElementById('msgList').innerHTML = '<div class="loading">جاري التحميل...</div>';
+  document.getElementById('view-conversations').style.display = 'none';
+  document.getElementById('view-messages').style.display = 'block';
+
+  const data = await adminFetch('conversation', { conversationId: convId });
+  const msgList = document.getElementById('msgList');
+  if(!data || !data.messages || data.messages.length === 0){
+    msgList.innerHTML = '<div class="empty">ما في رسائل</div>';
+    return;
+  }
+  msgList.innerHTML = data.messages.map(m => {
+    const img = m.generatedImage ? `<img class="msg-img" src="${m.generatedImage.url}">` : '';
+    const atts = (m.attachments||[]).filter(a=>a.mimeType && a.mimeType.startsWith('image/'))
+      .map(a=>`<img class="msg-img" src="data:${a.mimeType};base64,${a.data}">`).join('');
+    return `
+      <div class="msg-view">
+        <div class="msg-role">${m.role === 'user' ? 'المستخدم' : 'Dark AI'} — ${formatDate(m.created_at)}</div>
+        ${m.content ? `<div class="msg-content">${escapeHtml(m.content)}</div>` : ''}
+        ${img}${atts}
+      </div>
+    `;
+  }).join('');
+}
+
+function formatDate(d){
+  const date = new Date(d);
+  return date.toLocaleDateString('ar-EG', { day:'numeric', month:'short', year:'numeric' });
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){
+  return String(s||'').replace(/'/g, "\\'");
+}
+
+init();
+</script>
+</body>
+</html>
