@@ -113,6 +113,35 @@ export default async function handler(req, res) {
       return res.status(200).json({ conversations: result });
     }
 
+    if (action === 'conversation') {
+      const conversationId = req.query.conversationId;
+      if (!conversationId) {
+        return res.status(400).json({ error: 'لازم تحددي conversationId' });
+      }
+      const messages = await sql`
+        SELECT role, content, image_data, image_mime_type, attachments_json, created_at
+        FROM messages
+        WHERE conversation_id = ${conversationId}
+        ORDER BY created_at ASC
+      `;
+      const result = messages.map(m => {
+        let attachments = [];
+        if (m.attachments_json) {
+          try { attachments = JSON.parse(m.attachments_json); } catch (e) {}
+        }
+        return {
+          role: m.role,
+          content: m.content,
+          attachments,
+          generatedImage: m.image_data
+            ? { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` }
+            : null,
+          created_at: m.created_at
+        };
+      });
+      return res.status(200).json({ messages: result });
+    }
+
     return res.status(400).json({ error: 'action غير معروف' });
 
   } catch (err) {
