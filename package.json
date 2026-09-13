@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Backend server for Dark AI app",
+  "type": "module",
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
     "bcryptjs": "^2.4.3",
