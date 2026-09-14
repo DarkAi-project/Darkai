@@ -267,6 +267,7 @@ const SIGNUP_URL = 'https://darkai-delta.vercel.app/api/auth/signup';
 const LOGIN_URL = 'https://darkai-delta.vercel.app/api/auth/login';
 const CONVERSATIONS_URL = 'https://darkai-delta.vercel.app/api/conversations';
 const MESSAGES_URL = 'https://darkai-delta.vercel.app/api/messages';
+const CREDITS_URL = 'https://darkai-delta.vercel.app/api/credits';
 
 let conversations = [];
 let activeConvId = null;
@@ -331,6 +332,25 @@ function showApp(){
     activeConvId = conversations[0].id;
   }
   renderActiveChat();
+  refreshCredits();
+}
+
+async function refreshCredits(){
+  try {
+    const res = await fetch(CREDITS_URL, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    updateCreditsLabel(data.credits);
+  } catch(e){}
+}
+
+function updateCreditsLabel(credits){
+  const label = document.getElementById('creditsLabel');
+  if(label && typeof credits === 'number'){
+    label.textContent = `${credits} نقاط`;
+  }
 }
 
 function toggleAuthMode(){
@@ -773,12 +793,18 @@ async function generateImage(prompt){
   try {
     const res = await fetch(IMAGE_GEN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`
+      },
       body: JSON.stringify({ prompt })
     });
     const data = await res.json();
     if(!res.ok || !data.imageUrl){
       return { error: data.error || 'ما قدر يولد الصورة، جرب وصف مختلف.' };
+    }
+    if(typeof data.remainingCredits === 'number'){
+      updateCreditsLabel(data.remainingCredits);
     }
     return {
       url: data.imageUrl,
