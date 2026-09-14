@@ -45,7 +45,7 @@ export default async function handler(req, res) {
       const [userCount] = await sql`SELECT COUNT(*)::int AS count FROM users`;
       const [convCount] = await sql`SELECT COUNT(*)::int AS count FROM conversations`;
       const [msgCount] = await sql`SELECT COUNT(*)::int AS count FROM messages`;
-      const [imgCount] = await sql`SELECT COUNT(*)::int AS count FROM messages WHERE image_data IS NOT NULL`;
+      const [imgCount] = await sql`SELECT COUNT(*)::int AS count FROM messages WHERE image_data IS NOT NULL OR image_url IS NOT NULL`;
       const [newUsersToday] = await sql`
         SELECT COUNT(*)::int AS count FROM users
         WHERE created_at >= CURRENT_DATE
@@ -90,7 +90,7 @@ export default async function handler(req, res) {
       let messages = [];
       if (conversationIds.length > 0) {
         messages = await sql`
-          SELECT id, conversation_id, role, content, image_data, image_mime_type, attachments_json, created_at
+          SELECT id, conversation_id, role, content, image_url, image_data, image_mime_type, attachments_json, created_at
           FROM messages
           WHERE conversation_id = ANY(${conversationIds})
           ORDER BY created_at ASC
@@ -105,7 +105,7 @@ export default async function handler(req, res) {
           .map(m => ({
             role: m.role,
             content: m.content,
-            hasImage: !!m.image_data,
+            hasImage: !!(m.image_data || m.image_url),
             hasAttachments: !!m.attachments_json,
             created_at: m.created_at
           }))
@@ -119,7 +119,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'لازم تحددي conversationId' });
       }
       const messages = await sql`
-        SELECT role, content, image_data, image_mime_type, attachments_json, created_at
+        SELECT role, content, image_url, image_data, image_mime_type, attachments_json, created_at
         FROM messages
         WHERE conversation_id = ${conversationId}
         ORDER BY created_at ASC
@@ -129,13 +129,17 @@ export default async function handler(req, res) {
         if (m.attachments_json) {
           try { attachments = JSON.parse(m.attachments_json); } catch (e) {}
         }
+        let generatedImage = null;
+        if (m.image_url) {
+          generatedImage = { url: m.image_url };
+        } else if (m.image_data) {
+          generatedImage = { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` };
+        }
         return {
           role: m.role,
           content: m.content,
           attachments,
-          generatedImage: m.image_data
-            ? { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` }
-            : null,
+          generatedImage,
           created_at: m.created_at
         };
       });
