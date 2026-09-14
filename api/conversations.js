@@ -14,7 +14,7 @@ function getUserFromToken(req) {
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { return res.status(200).end(); }
 
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       let messages = [];
       if (conversationIds.length > 0) {
         messages = await sql`
-          SELECT id, conversation_id, role, content, image_data, image_mime_type, attachments_json, created_at
+          SELECT id, conversation_id, role, content, image_url, image_data, image_mime_type, attachments_json, created_at
           FROM messages
           WHERE conversation_id = ANY(${conversationIds})
           ORDER BY created_at ASC
@@ -58,14 +58,18 @@ export default async function handler(req, res) {
             if (m.attachments_json) {
               try { attachments = JSON.parse(m.attachments_json); } catch (e) {}
             }
+            let generatedImage = null;
+            if (m.image_url) {
+              generatedImage = { url: m.image_url };
+            } else if (m.image_data) {
+              generatedImage = { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` };
+            }
             return {
               id: m.id,
               role: m.role,
               content: m.content,
               attachments,
-              generatedImage: m.image_data
-                ? { url: `data:${m.image_mime_type || 'image/png'};base64,${m.image_data}` }
-                : null
+              generatedImage
             };
           })
       }));
@@ -81,6 +85,22 @@ export default async function handler(req, res) {
         RETURNING id, title, created_at
       `;
       return res.status(201).json({ conversation: inserted[0] });
+    }
+
+    if (req.method === 'PATCH') {
+      const { conversationId, title } = req.body || {};
+      if (!conversationId || !title) {
+        return res.status(400).json({ error: 'بيانات ناقصة' });
+      }
+      const updated = await sql`
+        UPDATE conversations SET title = ${title}
+        WHERE id = ${conversationId} AND user_id = ${user.userId}
+        RETURNING id, title
+      `;
+      if (updated.length === 0) {
+        return res.status(403).json({ error: 'ما إلك صلاحية على هاي المحادثة' });
+      }
+      return res.status(200).json({ conversation: updated[0] });
     }
 
     return res.status(405).json({ error: 'الطريقة غير مسموحة' });
