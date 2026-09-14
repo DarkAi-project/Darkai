@@ -451,6 +451,7 @@ async function saveMessageToServer(conversationId, msg){
         role: msg.role,
         content: msg.content || '',
         attachments: msg.attachments || null,
+        imageUrl: msg.imageUrl || null,
         imageData: msg.imageData || null,
         imageMimeType: msg.imageMimeType || null
       })
@@ -697,8 +698,7 @@ async function handleSend(){
           saveMessageToServer(conv.id, {
             role: 'ai',
             content: 'تفضلي، هاي الصورة:',
-            imageData: result.base64,
-            imageMimeType: result.mimeType
+            imageUrl: result.imageUrl
           });
         }
         renderActiveChat();
@@ -777,13 +777,12 @@ async function generateImage(prompt){
       body: JSON.stringify({ prompt })
     });
     const data = await res.json();
-    if(!res.ok || !data.image){
+    if(!res.ok || !data.imageUrl){
       return { error: data.error || 'ما قدر يولد الصورة، جرب وصف مختلف.' };
     }
     return {
-      url: `data:${data.mimeType || 'image/png'};base64,${data.image}`,
-      base64: data.image,
-      mimeType: data.mimeType || 'image/png'
+      url: data.imageUrl,
+      imageUrl: data.imageUrl
     };
   } catch(err){
     return { error: 'تعذر الاتصال بالسيرفر لتوليد الصورة.' };
