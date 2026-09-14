@@ -1,14 +1,42 @@
 import { put } from '@vercel/blob';
 
+import { put } from '@vercel/blob';
+import { neon } from '@neondatabase/serverless';
+import jwt from 'jsonwebtoken';
+
+function getUserFromToken(req) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token) return null;
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (e) {
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') { return res.status(200).end(); }
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'الطريقة غير مسموحة' });
   }
+
+  const user = getUserFromToken(req);
+  if (!user) {
+    return res.status(401).json({ error: 'لازم تسجلي دخول' });
+  }
+
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    return res.status(500).json({ error: 'إعدادات السيرفر ناقصة' });
+  }
+  const sql = neon(dbUrl);
+
+  const IMAGE_COST = 1;
 
   try {
     const { prompt } = req.body;
@@ -16,8 +44,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'لازم ترسل وصف نصي للصورة' });
     }
 
+    // خصم النقاط أولاً (بشكل آمن، ما بيخصم إذا الرصيد أقل من التكلفة)
+    const deducted = await sql`
+      UPDATE users SET credits = credits - ${IMAGE_COST}
+      WHERE id = ${user.userId} AND credits >= ${IMAGE_COST}
+      RETURNING credits
+    `;
+    if (deducted.length === 0) {
+      return res.status(402).json({ error: 'رصيدك من النقاط خلص، اشحني رصيد جديد لتقدري تولدي صور' });
+    }
+    let remainingCredits = deducted[0].credits;
+
     const hfToken = process.env.HF_TOKEN;
     if (!hfToken) {
+      await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
       return res.status(500).json({ error: 'مفتاح Hugging Face غير مُعرَّف على السيرفر' });
     }
 
@@ -36,6 +76,7 @@ export default async function handler(req, res) {
     const contentType = imgRes.headers.get('content-type') || '';
 
     if (!imgRes.ok || contentType.includes('application/json')) {
+      await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
       const errData = await imgRes.json().catch(() => ({}));
       const message =
         errData?.error ||
@@ -50,6 +91,7 @@ export default async function handler(req, res) {
     const mimeType = contentType.includes('image/') ? contentType : 'image/png';
 
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
       return res.status(500).json({ error: 'ما قدر يولد الصورة، جرب وصف مختلف.' });
     }
 
@@ -63,10 +105,15 @@ export default async function handler(req, res) {
       token: process.env.BLOB_READ_WRITE_TOKEN
     });
 
-    return res.status(200).json({ imageUrl: blob.url, mimeType, text: '' });
+    return res.status(200).json({ imageUrl: blob.url, mimeType, text: '', remainingCredits });
 
   } catch (err) {
     console.error('Server error:', err);
+    try {
+      await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
+    } catch (refundErr) {
+      console.error('Refund error:', refundErr);
+    }
     return res.status(500).json({ error: 'حدث خطأ غير متوقع على السيرفر' });
   }
 }
