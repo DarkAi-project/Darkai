@@ -1,3 +1,5 @@
+import { put } from '@vercel/blob';
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -20,8 +22,6 @@ export default async function handler(req, res) {
     }
 
     const modelUrl = 'https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-3-medium-diffusers';
-
-
 
     const imgRes = await fetch(modelUrl, {
       method: 'POST',
@@ -47,14 +47,23 @@ export default async function handler(req, res) {
 
     // Hugging Face بيرجع بايتات الصورة مباشرة (مش JSON)
     const arrayBuffer = await imgRes.arrayBuffer();
-    const imageData = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = contentType.includes('image/') ? contentType : 'image/png';
 
-    if (!imageData) {
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
       return res.status(500).json({ error: 'ما قدر يولد الصورة، جرب وصف مختلف.' });
     }
 
-    return res.status(200).json({ image: imageData, mimeType, text: '' });
+    // رفع الصورة لـ Vercel Blob بدل إرجاعها كـ base64
+    const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
+    const filename = `generated/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const blob = await put(filename, Buffer.from(arrayBuffer), {
+      access: 'public',
+      contentType: mimeType,
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
+
+    return res.status(200).json({ imageUrl: blob.url, mimeType, text: '' });
 
   } catch (err) {
     console.error('Server error:', err);
