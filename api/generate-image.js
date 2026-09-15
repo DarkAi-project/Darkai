@@ -55,51 +55,54 @@ export default async function handler(req, res) {
     }
     let remainingCredits = deducted[0].credits;
 
-    const hfToken = process.env.HF_TOKEN;
-    if (!hfToken) {
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!geminiKey) {
       await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
-      return res.status(500).json({ error: 'مفتاح Hugging Face غير مُعرَّف على السيرفر' });
+      return res.status(500).json({ error: 'مفتاح Gemini غير مُعرَّف على السيرفر' });
     }
 
-    const modelUrl = 'https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-3-medium-diffusers';
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`;
 
-    const imgRes = await fetch(modelUrl, {
+    const imgRes = await fetch(geminiUrl, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${hfToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ inputs: prompt })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+      })
     });
 
-    // لو صار خطأ، Hugging Face بيرجع JSON فيه تفاصيل الخطأ
-    const contentType = imgRes.headers.get('content-type') || '';
+    const data = await imgRes.json();
 
-    if (!imgRes.ok || contentType.includes('application/json')) {
+    if (!imgRes.ok) {
       await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
-      const errData = await imgRes.json().catch(() => ({}));
-      const message =
-        errData?.error ||
-        (imgRes.status === 503
-          ? 'النموذج عم يشتغل حالياً، جربي كمان بعد ثواني'
-          : 'خطأ أثناء توليد الصورة');
-      return res.status(imgRes.status === 503 ? 503 : imgRes.status).json({ error: message });
+      return res.status(imgRes.status).json({ error: data?.error?.message || 'خطأ أثناء توليد الصورة' });
     }
 
-    // Hugging Face بيرجع بايتات الصورة مباشرة (مش JSON)
-    const arrayBuffer = await imgRes.arrayBuffer();
-    const mimeType = contentType.includes('image/') ? contentType : 'image/png';
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    let base64Data = null;
+    let mimeType = 'image/png';
 
-    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+    for (const part of parts) {
+      if (part.inlineData) {
+        base64Data = part.inlineData.data;
+        mimeType = part.inlineData.mimeType || 'image/png';
+        break;
+      }
+    }
+
+    if (!base64Data) {
       await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
       return res.status(500).json({ error: 'ما قدر يولد الصورة، جرب وصف مختلف.' });
     }
+
+    const arrayBuffer = Buffer.from(base64Data, 'base64');
 
     // رفع الصورة لـ Vercel Blob بدل إرجاعها كـ base64
     const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
     const filename = `generated/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    const blob = await put(filename, Buffer.from(arrayBuffer), {
+    const blob = await put(filename, arrayBuffer, {
       access: 'public',
       contentType: mimeType,
       token: process.env.BLOB_READ_WRITE_TOKEN
