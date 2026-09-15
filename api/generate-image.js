@@ -53,54 +53,46 @@ export default async function handler(req, res) {
     }
     let remainingCredits = deducted[0].credits;
 
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
+    const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+    if (!cfAccountId || !cfToken) {
       await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
-      return res.status(500).json({ error: 'مفتاح Gemini غير مُعرَّف على السيرفر' });
+      return res.status(500).json({ error: 'إعدادات Cloudflare ناقصة على السيرفر' });
     }
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${geminiKey}`;
+    const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0`;
 
-    const imgRes = await fetch(geminiUrl, {
+    const imgRes = await fetch(cfUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
-      })
+      headers: {
+        Authorization: `Bearer ${cfToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ prompt })
     });
 
-    const data = await imgRes.json();
+    const contentType = imgRes.headers.get('content-type') || '';
 
-    if (!imgRes.ok) {
+    if (!imgRes.ok || contentType.includes('application/json')) {
       await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
-      return res.status(imgRes.status).json({ error: data?.error?.message || 'خطأ أثناء توليد الصورة' });
+      const errData = await imgRes.json().catch(() => ({}));
+      const message = errData?.errors?.[0]?.message || 'خطأ أثناء توليد الصورة';
+      return res.status(imgRes.status || 500).json({ error: message });
     }
 
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    let base64Data = null;
-    let mimeType = 'image/png';
+    const arrayBuffer = await imgRes.arrayBuffer();
+    const mimeType = contentType.includes('image/') ? contentType : 'image/png';
 
-    for (const part of parts) {
-      if (part.inlineData) {
-        base64Data = part.inlineData.data;
-        mimeType = part.inlineData.mimeType || 'image/png';
-        break;
-      }
-    }
-
-    if (!base64Data) {
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
       await sql`UPDATE users SET credits = credits + ${IMAGE_COST} WHERE id = ${user.userId}`;
       return res.status(500).json({ error: 'ما قدر يولد الصورة، جرب وصف مختلف.' });
     }
-
-    const arrayBuffer = Buffer.from(base64Data, 'base64');
 
     // رفع الصورة لـ Vercel Blob بدل إرجاعها كـ base64
     const ext = mimeType.includes('jpeg') ? 'jpg' : 'png';
     const filename = `generated/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-    const blob = await put(filename, arrayBuffer, {
+    const blob = await put(filename, Buffer.from(arrayBuffer), {
       access: 'public',
       contentType: mimeType,
       token: process.env.BLOB_READ_WRITE_TOKEN
