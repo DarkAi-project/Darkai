@@ -95,7 +95,7 @@ export default async function handler(req, res) {
     const blob = await put(filename, Buffer.from(arrayBuffer), {
       access: 'public',
       contentType: mimeType,
-      token: process.env.BLOB_READ_WRITE_TOKEN
+      token: process.env.PUBLIC_BLOB_READ_WRITE_TOKEN
     });
 
     return res.status(200).json({ imageUrl: blob.url, mimeType, text: '', remainingCredits });
