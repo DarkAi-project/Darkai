@@ -126,6 +126,7 @@
   .send-btn svg{ width:16px; height:16px; }
   .composer-note{ text-align:center; font-size:11px; color:var(--text-faint); margin-top:10px; }
   .full-loader{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:999; }
+
   @media (max-width:820px){
     .sidebar{ position:fixed; top:0; bottom:0; right:0; margin-right:-272px; box-shadow:0 0 40px rgba(0,0,0,.5); }
     .sidebar.open{ margin-right:0; }
@@ -135,6 +136,7 @@
   }
 </style>
 </head>
+
 <body>
 
 <div class="full-loader" id="fullLoader">
@@ -143,30 +145,45 @@
 
 <div class="auth-screen" id="authScreen" style="display:none;">
   <div class="auth-card">
-    <div class="auth-logo"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+    <div class="auth-logo">
+      <img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;">
+    </div>
+
     <div class="auth-title" id="authTitle">تسجيل الدخول</div>
     <div class="auth-sub" id="authSub">فوتي على حسابك بـ Dark AI</div>
+
     <div class="auth-error" id="authError"></div>
+
     <form id="authForm">
       <div class="auth-field">
         <label>الإيميل</label>
         <input type="email" id="authEmail" placeholder="you@example.com" autocomplete="email" required>
       </div>
+
       <div class="auth-field">
         <label>الباسورد</label>
         <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" required>
       </div>
+
       <button type="submit" class="auth-submit" id="authSubmitBtn">دخول</button>
     </form>
-    <div class="auth-switch" id="authSwitch">ما عندك حساب؟ <a onclick="toggleAuthMode()">سجلي حساب جديد</a></div>
+
+    <div class="auth-switch" id="authSwitch">
+      ما عندك حساب؟
+      <a onclick="toggleAuthMode()">سجلي حساب جديد</a>
+    </div>
   </div>
 </div>
 
 <div class="app" id="appRoot">
 
   <aside class="sidebar" id="sidebar">
+
     <div class="brand">
-      <div class="brand-mark"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+      <div class="brand-mark">
+        <img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+
       <div>
         <div class="brand-name">Dark AI</div>
         <div class="brand-sub">CREATIVE INTELLIGENCE</div>
@@ -174,92 +191,168 @@
     </div>
 
     <button class="new-chat-btn" onclick="startNewChat()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
       محادثة جديدة
     </button>
 
     <div class="side-section-label">المحادثات الأخيرة</div>
+
     <div class="conv-list" id="convList"></div>
 
     <div class="sidebar-foot">
+
       <div class="plan-pill">
         <span>الرصيد الحالي</span>
         <b id="creditsLabel">10 نقاط</b>
       </div>
+
       <div class="user-row">
         <div class="u-avatar" id="userAvatar">؟</div>
         <div class="u-email" id="userEmailLabel"></div>
+
         <div class="logout-btn" onclick="logout()" title="تسجيل خروج">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+            <path d="M16 17l5-5-5-5"/>
+            <path d="M21 12H9"/>
+          </svg>
         </div>
       </div>
+
     </div>
   </aside>
 
   <main class="main">
+
     <div class="topbar">
+
       <div class="topbar-left">
+
         <button class="icon-btn" id="menuToggle" onclick="toggleSidebar()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
         </button>
+
         <div class="model-select" id="modelSelect">
           <span>Dark AI</span>
           <span class="badge">Nova-1</span>
         </div>
+
       </div>
+
       <button class="icon-btn" onclick="startNewChat()" title="محادثة جديدة">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
       </button>
+
     </div>
 
     <div class="chat-scroll" id="chatScroll">
+
       <div class="hero" id="hero">
-        <div class="hero-logo"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+
+        <div class="hero-logo">
+          <img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;">
+        </div>
+
         <h1>وين ما تفكر، Dark AI موجود</h1>
-        <p>اسأل، اكتب، صمّم، أو أرسل صورة أو ملف PDF وخليه يساعدك بأسلوب سريع ومباشر.</p>
+
+        <p>
+          اسأل، اكتب، صمّم، أو أرسل صورة أو ملف PDF وخليه يساعدك بأسلوب سريع ومباشر.
+        </p>
+
         <div class="suggestions">
+
           <div class="sugg-card" onclick="fillPrompt(this)">
             <div class="t">اكتب لي إعلان</div>
             <div class="d">لمنتج جديد بأسلوب جذاب</div>
           </div>
+
           <div class="sugg-card" onclick="fillPrompt(this)">
             <div class="t">لخّص لي نص</div>
             <div class="d">حوّل مقال طويل لنقاط سريعة</div>
           </div>
+
           <div class="sugg-card" onclick="fillPrompt(this)">
             <div class="t">ساعدني بخطة عمل</div>
             <div class="d">لمشروع أو فكرة جديدة</div>
           </div>
+
           <div class="sugg-card" onclick="fillPrompt(this)">
             <div class="t">اشرح لي فكرة معقدة</div>
             <div class="d">بطريقة مبسطة وسهلة الفهم</div>
           </div>
+
         </div>
       </div>
+
       <div class="chat-inner" id="chatInner" style="display:none;"></div>
+
     </div>
 
     <div class="composer-wrap">
+
       <div class="composer">
+
         <div class="attach-preview" id="attachPreview"></div>
+
         <div class="composer-box">
-          <button class="icon-btn" id="attachBtn" title="إرفاق ملف" onclick="document.getElementById('fileInput').click()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 01-7.07-7.07l9.19-9.19a3.5 3.5 0 014.95 4.95l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+
+          <button
+            class="icon-btn"
+            id="attachBtn"
+            title="إرفاق ملف"
+            onclick="document.getElementById('fileInput').click()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.44 11.05l-9.19 9.19a5 5 0 01-7.07-7.07l9.19-9.19a3.5 3.5 0 014.95 4.95l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/>
+            </svg>
           </button>
-          <input type="file" id="fileInput" multiple accept="image/*,application/pdf,text/plain" style="display:none;">
-          <textarea id="composerInput" rows="1" placeholder="اكتب رسالتك لـ Dark AI…"></textarea>
-          <button class="send-btn" id="sendBtn" disabled onclick="handleSend()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+
+          <input
+            type="file"
+            id="fileInput"
+            multiple
+            accept="image/*,application/pdf,text/plain"
+            style="display:none;"
+          >
+
+          <textarea
+            id="composerInput"
+            rows="1"
+            placeholder="اكتب رسالتك لـ Dark AI…"
+          ></textarea>
+
+          <button
+            class="send-btn"
+            id="sendBtn"
+            disabled
+            onclick="handleSend()"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7"/>
+            </svg>
           </button>
+
         </div>
       </div>
-      <div class="composer-note">Dark AI قد يخطئ أحيانًا — تحقق من المعلومات المهمة</div>
+
+      <div class="composer-note">
+        Dark AI قد يخطئ أحيانًا — تحقق من المعلومات المهمة
+      </div>
+
     </div>
+
   </main>
 
 </div>
 
 <script>
+
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
 const INTENT_URL = 'https://darkai-delta.vercel.app/api/detect-intent';
@@ -272,559 +365,1943 @@ const CREDITS_URL = 'https://darkai-delta.vercel.app/api/credits';
 let conversations = [];
 let activeConvId = null;
 let selectedFiles = [];
-let authToken = localStorage.getItem('darkai_token') || null;
-let currentUser = JSON.parse(localStorage.getItem('darkai_user') || 'null');
+
+let authToken =
+  localStorage.getItem('darkai_token') || null;
+
+let currentUser =
+  JSON.parse(localStorage.getItem('darkai_user') || 'null');
+
 let authMode = 'login';
 
-const chatScroll   = document.getElementById('chatScroll');
-const chatInner    = document.getElementById('chatInner');
-const hero         = document.getElementById('hero');
-const convListEl   = document.getElementById('convList');
-const composer     = document.getElementById('composerInput');
-const sendBtn      = document.getElementById('sendBtn');
-const fileInput    = document.getElementById('fileInput');
-const attachPreview= document.getElementById('attachPreview');
-const authScreen   = document.getElementById('authScreen');
-const appRoot      = document.getElementById('appRoot');
-const fullLoader   = document.getElementById('fullLoader');
-const authForm     = document.getElementById('authForm');
-const authError    = document.getElementById('authError');
-const authEmail    = document.getElementById('authEmail');
-const authPassword = document.getElementById('authPassword');
-const authSubmitBtn= document.getElementById('authSubmitBtn');
-const authTitle    = document.getElementById('authTitle');
-const authSub      = document.getElementById('authSub');
-const authSwitch   = document.getElementById('authSwitch');
+const chatScroll    = document.getElementById('chatScroll');
+const chatInner     = document.getElementById('chatInner');
+const hero          = document.getElementById('hero');
+const convListEl    = document.getElementById('convList');
+const composer      = document.getElementById('composerInput');
+const sendBtn       = document.getElementById('sendBtn');
+const fileInput     = document.getElementById('fileInput');
+const attachPreview = document.getElementById('attachPreview');
+
+const authScreen =
+  document.getElementById('authScreen');
+
+const appRoot =
+  document.getElementById('appRoot');
+
+const fullLoader =
+  document.getElementById('fullLoader');
+
+const authForm =
+  document.getElementById('authForm');
+
+const authError =
+  document.getElementById('authError');
+
+const authEmail =
+  document.getElementById('authEmail');
+
+const authPassword =
+  document.getElementById('authPassword');
+
+const authSubmitBtn =
+  document.getElementById('authSubmitBtn');
+
+const authTitle =
+  document.getElementById('authTitle');
+
+const authSub =
+  document.getElementById('authSub');
+
+const authSwitch =
+  document.getElementById('authSwitch');
+
+
+/* =========================================================
+   INIT
+========================================================= */
 
 async function init(){
+
   if(authToken){
-    const ok = await loadConversationsFromServer();
+
+    const ok =
+      await loadConversationsFromServer();
+
     if(ok){
+
       showApp();
+
       fullLoader.style.display = 'none';
+
       return;
     }
+
     localStorage.removeItem('darkai_token');
     localStorage.removeItem('darkai_user');
+
     authToken = null;
     currentUser = null;
   }
+
   fullLoader.style.display = 'none';
+
   showAuthScreen();
 }
 
+
+/* =========================================================
+   AUTH
+========================================================= */
+
 function showAuthScreen(){
+
   authScreen.style.display = 'flex';
+
   appRoot.classList.remove('visible');
 }
 
+
 function showApp(){
+
   authScreen.style.display = 'none';
+
   appRoot.classList.add('visible');
-  const emailLabel = document.getElementById('userEmailLabel');
-  const avatar = document.getElementById('userAvatar');
+
+  const emailLabel =
+    document.getElementById('userEmailLabel');
+
+  const avatar =
+    document.getElementById('userAvatar');
+
   if(currentUser){
-    emailLabel.textContent = currentUser.email;
-    avatar.textContent = currentUser.email.charAt(0).toUpperCase();
+
+    emailLabel.textContent =
+      currentUser.email;
+
+    avatar.textContent =
+      currentUser.email
+        .charAt(0)
+        .toUpperCase();
   }
+
   renderConvList();
+
   if(conversations.length > 0){
-    activeConvId = conversations[0].id;
+
+    activeConvId =
+      conversations[0].id;
   }
+
   renderActiveChat();
+
   refreshCredits();
 }
 
+
 async function refreshCredits(){
-  try {
-    const res = await fetch(CREDITS_URL, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
+
+  try{
+
+    const res =
+      await fetch(CREDITS_URL, {
+        headers:{
+          'Authorization':
+            `Bearer ${authToken}`
+        }
+      });
+
     if(!res.ok) return;
-    const data = await res.json();
+
+    const data =
+      await res.json();
+
     updateCreditsLabel(data.credits);
-  } catch(e){}
+
+  }catch(e){}
 }
+
 
 function updateCreditsLabel(credits){
-  const label = document.getElementById('creditsLabel');
-  if(label && typeof credits === 'number'){
-    label.textContent = `${credits} نقاط`;
+
+  const label =
+    document.getElementById('creditsLabel');
+
+  if(
+    label &&
+    typeof credits === 'number'
+  ){
+
+    label.textContent =
+      `${credits} نقاط`;
   }
 }
+
 
 function toggleAuthMode(){
-  authMode = authMode === 'login' ? 'signup' : 'login';
+
+  authMode =
+    authMode === 'login'
+      ? 'signup'
+      : 'login';
+
   authError.style.display = 'none';
+
   if(authMode === 'signup'){
-    authTitle.textContent = 'إنشاء حساب جديد';
-    authSub.textContent = 'اعملي حساب جديد وابدئي مع Dark AI';
-    authSubmitBtn.textContent = 'إنشاء حساب';
-    authSwitch.innerHTML = 'عندك حساب؟ <a onclick="toggleAuthMode()">سجلي دخول</a>';
-    authPassword.setAttribute('autocomplete', 'new-password');
-  } else {
-    authTitle.textContent = 'تسجيل الدخول';
-    authSub.textContent = 'فوتي على حسابك بـ Dark AI';
-    authSubmitBtn.textContent = 'دخول';
-    authSwitch.innerHTML = 'ما عندك حساب؟ <a onclick="toggleAuthMode()">سجلي حساب جديد</a>';
-    authPassword.setAttribute('autocomplete', 'current-password');
+
+    authTitle.textContent =
+      'إنشاء حساب جديد';
+
+    authSub.textContent =
+      'اعملي حساب جديد وابدئي مع Dark AI';
+
+    authSubmitBtn.textContent =
+      'إنشاء حساب';
+
+    authSwitch.innerHTML =
+      'عندك حساب؟ <a onclick="toggleAuthMode()">سجلي دخول</a>';
+
+    authPassword.setAttribute(
+      'autocomplete',
+      'new-password'
+    );
+
+  }else{
+
+    authTitle.textContent =
+      'تسجيل الدخول';
+
+    authSub.textContent =
+      'فوتي على حسابك بـ Dark AI';
+
+    authSubmitBtn.textContent =
+      'دخول';
+
+    authSwitch.innerHTML =
+      'ما عندك حساب؟ <a onclick="toggleAuthMode()">سجلي حساب جديد</a>';
+
+    authPassword.setAttribute(
+      'autocomplete',
+      'current-password'
+    );
   }
 }
 
-authForm.addEventListener('submit', async (e)=>{
-  e.preventDefault();
-  authError.style.display = 'none';
-  const email = authEmail.value.trim();
-  const password = authPassword.value;
-  if(!email || !password){ return; }
 
-  authSubmitBtn.disabled = true;
-  authSubmitBtn.textContent = 'لحظة...';
+authForm.addEventListener(
+  'submit',
+  async (e)=>{
 
-  const url = authMode === 'signup' ? SIGNUP_URL : LOGIN_URL;
+    e.preventDefault();
 
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
+    authError.style.display =
+      'none';
 
-    if(!res.ok){
-      authError.textContent = data.error || 'صار خطأ، جربي مرة ثانية';
-      authError.style.display = 'block';
-      authSubmitBtn.disabled = false;
-      authSubmitBtn.textContent = authMode === 'signup' ? 'إنشاء حساب' : 'دخول';
+    const email =
+      authEmail.value.trim();
+
+    const password =
+      authPassword.value;
+
+    if(!email || !password){
       return;
     }
 
-    authToken = data.token;
-    currentUser = data.user;
-    localStorage.setItem('darkai_token', authToken);
-    localStorage.setItem('darkai_user', JSON.stringify(currentUser));
+    authSubmitBtn.disabled = true;
 
-    await loadConversationsFromServer();
-    showApp();
+    authSubmitBtn.textContent =
+      'لحظة...';
 
-  } catch(err){
-    authError.textContent = 'تعذر الاتصال بالسيرفر، تأكدي من الإنترنت';
-    authError.style.display = 'block';
+    const url =
+      authMode === 'signup'
+        ? SIGNUP_URL
+        : LOGIN_URL;
+
+    try{
+
+      const res =
+        await fetch(url,{
+          method:'POST',
+          headers:{
+            'Content-Type':
+              'application/json'
+          },
+          body:
+            JSON.stringify({
+              email,
+              password
+            })
+        });
+
+      const data =
+        await res.json();
+
+      if(!res.ok){
+
+        authError.textContent =
+          data.error ||
+          'صار خطأ، جربي مرة ثانية';
+
+        authError.style.display =
+          'block';
+
+        authSubmitBtn.disabled =
+          false;
+
+        authSubmitBtn.textContent =
+          authMode === 'signup'
+            ? 'إنشاء حساب'
+            : 'دخول';
+
+        return;
+      }
+
+      authToken =
+        data.token;
+
+      currentUser =
+        data.user;
+
+      localStorage.setItem(
+        'darkai_token',
+        authToken
+      );
+
+      localStorage.setItem(
+        'darkai_user',
+        JSON.stringify(currentUser)
+      );
+
+      await loadConversationsFromServer();
+
+      showApp();
+
+    }catch(err){
+
+      authError.textContent =
+        'تعذر الاتصال بالسيرفر، تأكدي من الإنترنت';
+
+      authError.style.display =
+        'block';
+    }
+
+    authSubmitBtn.disabled =
+      false;
+
+    authSubmitBtn.textContent =
+      authMode === 'signup'
+        ? 'إنشاء حساب'
+        : 'دخول';
   }
-  authSubmitBtn.disabled = false;
-  authSubmitBtn.textContent = authMode === 'signup' ? 'إنشاء حساب' : 'دخول';
-});
+);
+
 
 function logout(){
-  localStorage.removeItem('darkai_token');
-  localStorage.removeItem('darkai_user');
+
+  localStorage.removeItem(
+    'darkai_token'
+  );
+
+  localStorage.removeItem(
+    'darkai_user'
+  );
+
   authToken = null;
+
   currentUser = null;
+
   conversations = [];
+
   activeConvId = null;
+
   authEmail.value = '';
+
   authPassword.value = '';
+
   showAuthScreen();
 }
 
+
+/* =========================================================
+   CONVERSATIONS
+========================================================= */
+
 async function loadConversationsFromServer(){
-  try {
-    const res = await fetch(CONVERSATIONS_URL, {
-      headers: { 'Authorization': `Bearer ${authToken}` }
-    });
+
+  try{
+
+    const res =
+      await fetch(CONVERSATIONS_URL,{
+        headers:{
+          'Authorization':
+            `Bearer ${authToken}`
+        }
+      });
+
     if(!res.ok) return false;
-    const data = await res.json();
-    conversations = data.conversations || [];
+
+    const data =
+      await res.json();
+
+    conversations =
+      data.conversations || [];
+
     return true;
-  } catch(err){
+
+  }catch(err){
+
     return false;
   }
 }
 
+
 async function createConversationOnServer(title){
-  const res = await fetch(CONVERSATIONS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-    body: JSON.stringify({ title })
-  });
-  const data = await res.json();
+
+  const res =
+    await fetch(CONVERSATIONS_URL,{
+      method:'POST',
+      headers:{
+        'Content-Type':
+          'application/json',
+        'Authorization':
+          `Bearer ${authToken}`
+      },
+      body:
+        JSON.stringify({ title })
+    });
+
+  const data =
+    await res.json();
+
   return data.conversation;
 }
 
-async function updateConversationTitle(id, title){
-  try {
-    await fetch(CONVERSATIONS_URL, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-      body: JSON.stringify({ conversationId: id, title })
+
+async function updateConversationTitle(
+  id,
+  title
+){
+
+  try{
+
+    await fetch(CONVERSATIONS_URL,{
+      method:'PATCH',
+      headers:{
+        'Content-Type':
+          'application/json',
+        'Authorization':
+          `Bearer ${authToken}`
+      },
+      body:
+        JSON.stringify({
+          conversationId:id,
+          title
+        })
     });
-  } catch(e){}
+
+  }catch(e){}
 }
 
-async function saveMessageToServer(conversationId, msg){
-  try {
-    await fetch(MESSAGES_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-      body: JSON.stringify({
-        conversationId,
-        role: msg.role,
-        content: msg.content || '',
-        attachments: msg.attachments || null,
-        imageUrl: msg.imageUrl || null,
-        imageData: msg.imageData || null,
-        imageMimeType: msg.imageMimeType || null
-      })
+
+async function saveMessageToServer(
+  conversationId,
+  msg
+){
+
+  try{
+
+    await fetch(MESSAGES_URL,{
+      method:'POST',
+      headers:{
+        'Content-Type':
+          'application/json',
+        'Authorization':
+          `Bearer ${authToken}`
+      },
+      body:
+        JSON.stringify({
+          conversationId,
+          role:msg.role,
+          content:msg.content || '',
+          attachments:
+            msg.attachments || null,
+          imageUrl:
+            msg.imageUrl || null,
+          imageData:
+            msg.imageData || null,
+          imageMimeType:
+            msg.imageMimeType || null
+        })
     });
-  } catch(e){
-    console.error('save message failed', e);
+
+  }catch(e){
+
+    console.error(
+      'save message failed',
+      e
+    );
   }
 }
 
-function uid(){ return 'c' + Date.now(); }
+
+function uid(){
+
+  return 'c' + Date.now();
+}
+
 
 async function startNewChat(){
-  try {
-    const conv = await createConversationOnServer('محادثة جديدة');
-    conversations.unshift({ id: conv.id, title: conv.title, messages: [] });
-    activeConvId = conv.id;
+
+  try{
+
+    const conv =
+      await createConversationOnServer(
+        'محادثة جديدة'
+      );
+
+    conversations.unshift({
+      id:conv.id,
+      title:conv.title,
+      messages:[]
+    });
+
+    activeConvId =
+      conv.id;
+
     renderConvList();
+
     renderActiveChat();
+
     composer.focus();
-    if(window.innerWidth <= 820) closeSidebarMobile();
-  } catch(err){
-    alert('تعذر إنشاء محادثة جديدة، تأكدي من اتصالك بالإنترنت.');
+
+    if(window.innerWidth <= 820){
+
+      closeSidebarMobile();
+    }
+
+  }catch(err){
+
+    alert(
+      'تعذر إنشاء محادثة جديدة، تأكدي من اتصالك بالإنترنت.'
+    );
   }
 }
 
+
 function renderConvList(){
+
   convListEl.innerHTML = '';
+
   conversations.forEach(c=>{
-    const div = document.createElement('div');
-    div.className = 'conv-item' + (c.id===activeConvId ? ' active':'');
-    div.innerHTML = `<span class="dot"></span><span>${escapeHtml(c.title)}</span>`;
-    div.onclick = ()=>{ activeConvId = c.id; renderConvList(); renderActiveChat(); if(window.innerWidth<=820) closeSidebarMobile(); };
+
+    const div =
+      document.createElement('div');
+
+    div.className =
+      'conv-item' +
+      (
+        c.id === activeConvId
+          ? ' active'
+          : ''
+      );
+
+    div.innerHTML =
+      `<span class="dot"></span>
+       <span>${escapeHtml(c.title)}</span>`;
+
+    div.onclick = ()=>{
+
+      activeConvId =
+        c.id;
+
+      renderConvList();
+
+      renderActiveChat();
+
+      if(window.innerWidth <= 820){
+
+        closeSidebarMobile();
+      }
+    };
+
     convListEl.appendChild(div);
   });
 }
 
-function getActiveConv(){ return conversations.find(c=>c.id===activeConvId); }
+
+function getActiveConv(){
+
+  return conversations.find(
+    c => c.id === activeConvId
+  );
+}
+
 
 function renderActiveChat(){
-  const conv = getActiveConv();
-  if(!conv || conv.messages.length===0){
-    hero.style.display='flex';
-    chatInner.style.display='none';
-    chatInner.innerHTML='';
+
+  const conv =
+    getActiveConv();
+
+  if(
+    !conv ||
+    conv.messages.length === 0
+  ){
+
+    hero.style.display =
+      'flex';
+
+    chatInner.style.display =
+      'none';
+
+    chatInner.innerHTML =
+      '';
+
     return;
   }
-  hero.style.display='none';
-  chatInner.style.display='flex';
-  chatInner.innerHTML='';
-  conv.messages.forEach(m=> chatInner.appendChild(buildMessageEl(m)));
+
+  hero.style.display =
+    'none';
+
+  chatInner.style.display =
+    'flex';
+
+  chatInner.innerHTML =
+    '';
+
+  conv.messages.forEach(
+    m =>
+      chatInner.appendChild(
+        buildMessageEl(m)
+      )
+  );
+
   scrollToBottom();
 }
 
+
+/* =========================================================
+   MESSAGE UI
+========================================================= */
+
 function fileIconSvg(){
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>`;
+
+  return `
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <path d="M14 2v6h6"/>
+    </svg>
+  `;
 }
+
 
 function attachmentsHtml(atts){
-  if(!atts || atts.length===0) return '';
-  const items = atts.map(a=>{
-    if(a.mimeType && a.mimeType.startsWith('image/')){
-      return `<img class="att-img" src="data:${a.mimeType};base64,${a.data}">`;
-    }
-    return `<div class="att-file">${fileIconSvg()}<span>${escapeHtml(a.name||'ملف')}</span></div>`;
-  }).join('');
-  return `<div class="msg-attachments">${items}</div>`;
+
+  if(!atts || atts.length === 0){
+
+    return '';
+  }
+
+  const items =
+    atts.map(a=>{
+
+      if(
+        a.mimeType &&
+        a.mimeType.startsWith('image/')
+      ){
+
+        return `
+          <img
+            class="att-img"
+            src="data:${a.mimeType};base64,${a.data}"
+          >
+        `;
+      }
+
+      return `
+        <div class="att-file">
+          ${fileIconSvg()}
+          <span>
+            ${escapeHtml(a.name || 'ملف')}
+          </span>
+        </div>
+      `;
+
+    }).join('');
+
+  return `
+    <div class="msg-attachments">
+      ${items}
+    </div>
+  `;
 }
 
+
 function buildMessageEl(m){
-  const wrap = document.createElement('div');
-  wrap.className = 'msg ' + (m.role==='user' ? 'user':'ai');
-  const avatar = m.role==='user'
-    ? `<div class="avatar user">أنت</div>`
-    : `<div class="avatar ai"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
-  const genImg = m.generatedImage
-    ? `<div class="msg-attachments"><img class="att-img" style="width:220px;height:220px;" src="${m.generatedImage.url}"></div>`
-    : '';
+
+  const wrap =
+    document.createElement('div');
+
+  wrap.className =
+    'msg ' +
+    (
+      m.role === 'user'
+        ? 'user'
+        : 'ai'
+    );
+
+  const avatar =
+    m.role === 'user'
+
+      ? `<div class="avatar user">أنت</div>`
+
+      : `
+        <div class="avatar ai">
+          <img
+            src="IMG_4714.jpeg"
+            style="width:100%;height:100%;object-fit:cover;display:block;"
+          >
+        </div>
+      `;
+
+  const genImg =
+    m.generatedImage
+
+      ? `
+        <div class="msg-attachments">
+          <img
+            class="att-img"
+            style="width:220px;height:220px;"
+            src="${m.generatedImage.url}"
+          >
+        </div>
+      `
+
+      : '';
+
   wrap.innerHTML = `
     ${avatar}
+
     <div class="bubble-wrap">
-      <div class="role-label">${m.role==='user' ? 'أنت' : 'Dark AI'}</div>
-      ${m.content ? `<div class="bubble">${escapeHtml(m.content)}</div>` : ''}
+
+      <div class="role-label">
+        ${m.role === 'user' ? 'أنت' : 'Dark AI'}
+      </div>
+
+      ${
+        m.content
+          ? `<div class="bubble">${escapeHtml(m.content)}</div>`
+          : ''
+      }
+
       ${attachmentsHtml(m.attachments)}
+
       ${genImg}
-    </div>`;
+
+    </div>
+  `;
+
   return wrap;
 }
 
+
 function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  return String(s).replace(
+    /[&<>"']/g,
+    c => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#39;'
+    }[c])
+  );
 }
+
 
 function scrollToBottom(){
-  requestAnimationFrame(()=>{ chatScroll.scrollTop = chatScroll.scrollHeight; });
+
+  requestAnimationFrame(()=>{
+    chatScroll.scrollTop =
+      chatScroll.scrollHeight;
+  });
 }
 
+
 function fillPrompt(el){
-  composer.value = el.querySelector('.t').innerText;
-  composer.dispatchEvent(new Event('input'));
+
+  composer.value =
+    el.querySelector('.t').innerText;
+
+  composer.dispatchEvent(
+    new Event('input')
+  );
+
   composer.focus();
 }
 
+
+/* =========================================================
+   FILES
+========================================================= */
+
 function fileToBase64(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    reader.onload = ()=> resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+
+  return new Promise(
+    (resolve,reject)=>{
+
+      const reader =
+        new FileReader();
+
+      reader.onload = () =>
+        resolve(
+          reader.result.split(',')[1]
+        );
+
+      reader.onerror =
+        reject;
+
+      reader.readAsDataURL(file);
+    }
+  );
 }
 
-fileInput.addEventListener('change', async ()=>{
-  const files = Array.from(fileInput.files);
-  for(const file of files){
-    if(selectedFiles.length >= 4){ break; }
-    if(file.size > 4 * 1024 * 1024){
-      alert(`الملف "${file.name}" أكبر من 4 ميجابايت، جرب ملف أصغر.`);
-      continue;
+
+fileInput.addEventListener(
+  'change',
+  async ()=>{
+
+    const files =
+      Array.from(fileInput.files);
+
+    for(const file of files){
+
+      if(selectedFiles.length >= 4){
+
+        break;
+      }
+
+      if(
+        file.size >
+        4 * 1024 * 1024
+      ){
+
+        alert(
+          `الملف "${file.name}" أكبر من 4 ميجابايت، جرب ملف أصغر.`
+        );
+
+        continue;
+      }
+
+      const base64 =
+        await fileToBase64(file);
+
+      selectedFiles.push({
+        name:file.name,
+        mimeType:
+          file.type ||
+          'application/octet-stream',
+        data:base64
+      });
     }
-    const base64 = await fileToBase64(file);
-    selectedFiles.push({ name: file.name, mimeType: file.type || 'application/octet-stream', data: base64 });
+
+    fileInput.value =
+      '';
+
+    renderAttachPreview();
+
+    updateSendState();
   }
-  fileInput.value = '';
-  renderAttachPreview();
-  updateSendState();
-});
+);
+
 
 function renderAttachPreview(){
-  attachPreview.innerHTML = '';
-  selectedFiles.forEach((f, idx)=>{
-    const chip = document.createElement('div');
-    chip.className = 'attach-chip';
-    const thumb = f.mimeType.startsWith('image/')
-      ? `<img src="data:${f.mimeType};base64,${f.data}">`
-      : fileIconSvg();
-    chip.innerHTML = `${thumb}<span class="name">${escapeHtml(f.name)}</span><span class="rm">✕</span>`;
-    chip.querySelector('.rm').onclick = ()=>{
-      selectedFiles.splice(idx,1);
-      renderAttachPreview();
-      updateSendState();
-    };
-    attachPreview.appendChild(chip);
-  });
+
+  attachPreview.innerHTML =
+    '';
+
+  selectedFiles.forEach(
+    (f,idx)=>{
+
+      const chip =
+        document.createElement('div');
+
+      chip.className =
+        'attach-chip';
+
+      const thumb =
+        f.mimeType.startsWith('image/')
+
+          ? `
+            <img
+              src="data:${f.mimeType};base64,${f.data}"
+            >
+          `
+
+          : fileIconSvg();
+
+      chip.innerHTML = `
+        ${thumb}
+
+        <span class="name">
+          ${escapeHtml(f.name)}
+        </span>
+
+        <span class="rm">
+          ✕
+        </span>
+      `;
+
+      chip.querySelector('.rm').onclick =
+        ()=>{
+
+          selectedFiles.splice(
+            idx,
+            1
+          );
+
+          renderAttachPreview();
+
+          updateSendState();
+        };
+
+      attachPreview.appendChild(
+        chip
+      );
+    }
+  );
 }
+
 
 function updateSendState(){
-  sendBtn.disabled = composer.value.trim().length === 0 && selectedFiles.length === 0;
+
+  sendBtn.disabled =
+    composer.value.trim().length === 0 &&
+    selectedFiles.length === 0;
 }
 
-composer.addEventListener('input', ()=>{
-  composer.style.height = 'auto';
-  composer.style.height = Math.min(composer.scrollHeight, 160) + 'px';
-  updateSendState();
-});
 
-composer.addEventListener('keydown', (e)=>{
-  if(e.key==='Enter' && !e.shiftKey){
-    e.preventDefault();
-    handleSend();
+composer.addEventListener(
+  'input',
+  ()=>{
+
+    composer.style.height =
+      'auto';
+
+    composer.style.height =
+      Math.min(
+        composer.scrollHeight,
+        160
+      ) + 'px';
+
+    updateSendState();
   }
-});
+);
+
+
+composer.addEventListener(
+  'keydown',
+  e=>{
+
+    if(
+      e.key === 'Enter' &&
+      !e.shiftKey
+    ){
+
+      e.preventDefault();
+
+      handleSend();
+    }
+  }
+);
+
+
+/* =========================================================
+   IMAGE REQUEST DETECTION
+========================================================= */
 
 function normalizeArabic(s){
-  return s.replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+
+  return String(s || '')
+    .replace(/[أإآ]/g,'ا')
+    .replace(/ة/g,'ه')
+    .replace(/ى/g,'ي');
 }
+
 
 function looksLikeImageRequest(text){
+
   if(!text) return false;
-  const t = normalizeArabic(text.toLowerCase());
-  const keywords = ['صوره','رسمه','ارسم','رسم لي','رسمي لي','اعمل صوره','اعملي صوره','سوي صوره','سويلي صوره','صمم صوره','صممي صوره','انشئ صوره','ولد صوره','draw','generate image','create an image','make an image','image of','picture of'];
-  return keywords.some(k => t.includes(k));
+
+  const t =
+    normalizeArabic(
+      text.toLowerCase()
+    );
+
+  const keywords = [
+
+    'صوره',
+    'صورة',
+    'رسمه',
+    'رسمة',
+    'ارسم',
+    'ارسم لي',
+    'رسمي لي',
+    'اعمل صوره',
+    'اعملي صوره',
+    'سوي صوره',
+    'سويلي صوره',
+    'صمم صوره',
+    'صممي صوره',
+    'انشئ صوره',
+    'انشئ صورة',
+    'ولد صوره',
+    'ولد صورة',
+
+    'draw',
+    'generate image',
+    'create an image',
+    'make an image',
+    'image of',
+    'picture of'
+  ];
+
+  return keywords.some(
+    k =>
+      t.includes(
+        normalizeArabic(
+          k.toLowerCase()
+        )
+      )
+  );
 }
 
+
+/* =========================================================
+   IMAGE EDIT DETECTION
+========================================================= */
+
+function looksLikeImageEditRequest(text){
+
+  if(!text) return false;
+
+  const t =
+    normalizeArabic(
+      text.toLowerCase()
+    );
+
+  const keywords = [
+
+    'عدل',
+    'عدلي',
+    'تعديل',
+    'عدلها',
+    'عدليها',
+
+    'غير',
+    'غيرلي',
+    'غيرها',
+    'غيّر',
+    'غيّرلي',
+    'غيّرها',
+
+    'حول',
+    'حولها',
+    'حولها الى',
+    'تحويل',
+    'حوّل',
+    'حوّلها',
+    'حوّلها الى',
+
+    'اجعلها',
+    'اجعل الصورة',
+    'خليها',
+    'خلي الصورة',
+    'خليها مثل',
+
+    'طورها',
+    'تطوير',
+    'حسنها',
+    'حسّنها',
+
+    'بدل',
+    'بدلها',
+    'استبدل',
+    'استبدلها',
+
+    'صمم عليها',
+    'اعمل عليها',
+    'اعمل منها',
+    'اصنع منها',
+
+    'شيل',
+    'احذف',
+    'احذف منها',
+
+    'ضيف',
+    'اضف',
+    'أضف',
+
+    'غير اللون',
+    'غير الخلفية',
+    'غير الملابس',
+    'غير الوجه',
+    'غير السيارة',
+
+    'edit',
+    'modify',
+    'transform',
+    'change',
+    'replace',
+    'remove',
+    'add',
+    'make this',
+    'turn this into',
+    'transform this',
+    'edit this',
+    'image to image'
+  ];
+
+  return keywords.some(
+    k =>
+      t.includes(
+        normalizeArabic(
+          k.toLowerCase()
+        )
+      )
+  );
+}
+
+
+/* =========================================================
+   MAIN SEND
+========================================================= */
+
 async function handleSend(){
-  const text = composer.value.trim();
-  const attachments = selectedFiles.slice();
-  if(!text && attachments.length===0) return;
 
-  if(!activeConvId || !getActiveConv()){
-    await startNewChat();
-  }
-  const conv = getActiveConv();
-  if(!conv) return;
+  const text =
+    composer.value.trim();
 
-  const userMsg = { role:'user', content:text, attachments };
-  conv.messages.push(userMsg);
-  saveMessageToServer(conv.id, userMsg);
+  const attachments =
+    selectedFiles.slice();
 
-  if(conv.messages.length===1){
-    const newTitle = (text || attachments[0]?.name || 'محادثة جديدة').slice(0,32);
-    conv.title = newTitle;
-    renderConvList();
-    updateConversationTitle(conv.id, newTitle);
-  }
+  if(
+    !text &&
+    attachments.length === 0
+  ){
 
-  composer.value='';
-  composer.style.height='auto';
-  selectedFiles = [];
-  renderAttachPreview();
-  sendBtn.disabled = true;
-  renderActiveChat();
-
-  const typingEl = document.createElement('div');
-  typingEl.className = 'msg ai';
-  typingEl.innerHTML = `<div class="avatar ai"><img src="IMG_4714.jpeg" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
-    <div class="bubble-wrap"><div class="role-label">Dark AI</div>
-    <div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
-  chatInner.appendChild(typingEl);
-  scrollToBottom();
-
-  const bubbleEl = typingEl.querySelector('.bubble');
-
-  if(attachments.length > 0){
-    let started = false;
-    getAIResponse(text, attachments, (partialText)=>{
-      if(!started){ bubbleEl.innerHTML = ''; started = true; }
-      bubbleEl.textContent = partialText;
-      scrollToBottom();
-    }).then(reply=>{
-      const aiMsg = { role:'ai', content: reply };
-      conv.messages.push(aiMsg);
-      saveMessageToServer(conv.id, aiMsg);
-      typingEl.remove();
-      renderActiveChat();
-    });
     return;
   }
 
-  const localGuess = looksLikeImageRequest(text);
+  if(
+    !activeConvId ||
+    !getActiveConv()
+  ){
 
-  detectIntent(text).then(intent=>{
-    const shouldGenerateImage = localGuess || intent.isImageRequest;
-    if(shouldGenerateImage){
-      const promptForImage = intent.englishPrompt || text;
-      generateImage(promptForImage).then(result=>{
+    await startNewChat();
+  }
+
+  const conv =
+    getActiveConv();
+
+  if(!conv) return;
+
+  const userMsg = {
+    role:'user',
+    content:text,
+    attachments
+  };
+
+  conv.messages.push(
+    userMsg
+  );
+
+  saveMessageToServer(
+    conv.id,
+    userMsg
+  );
+
+  if(conv.messages.length === 1){
+
+    const newTitle =
+      (
+        text ||
+        attachments[0]?.name ||
+        'محادثة جديدة'
+      ).slice(0,32);
+
+    conv.title =
+      newTitle;
+
+    renderConvList();
+
+    updateConversationTitle(
+      conv.id,
+      newTitle
+    );
+  }
+
+  composer.value =
+    '';
+
+  composer.style.height =
+    'auto';
+
+  selectedFiles =
+    [];
+
+  renderAttachPreview();
+
+  sendBtn.disabled =
+    true;
+
+  renderActiveChat();
+
+
+  /*
+    إنشاء مؤشر الكتابة
+  */
+
+  const typingEl =
+    document.createElement('div');
+
+  typingEl.className =
+    'msg ai';
+
+  typingEl.innerHTML = `
+
+    <div class="avatar ai">
+      <img
+        src="IMG_4714.jpeg"
+        style="width:100%;height:100%;object-fit:cover;display:block;"
+      >
+    </div>
+
+    <div class="bubble-wrap">
+
+      <div class="role-label">
+        Dark AI
+      </div>
+
+      <div class="bubble">
+
+        <div class="typing">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+
+      </div>
+
+    </div>
+  `;
+
+  chatInner.appendChild(
+    typingEl
+  );
+
+  scrollToBottom();
+
+  const bubbleEl =
+    typingEl.querySelector(
+      '.bubble'
+    );
+
+
+  /* =======================================================
+     IMAGE / FILE ATTACHMENTS
+  ======================================================= */
+
+  if(attachments.length > 0){
+
+    /*
+      نبحث عن أول صورة فقط.
+      PDF/TXT يبقوا مع Gemini.
+    */
+
+    const firstImage =
+      attachments.find(
+        a =>
+          a.mimeType &&
+          a.mimeType.startsWith(
+            'image/'
+          )
+      );
+
+
+    /*
+      IMAGE → IMAGE
+    */
+
+    if(
+      firstImage &&
+      looksLikeImageEditRequest(text)
+    ){
+
+      try{
+
+        const result =
+          await generateImage(
+            text,
+            firstImage.data
+          );
+
         typingEl.remove();
+
         if(result.error){
-          const aiMsg = { role:'ai', content: `⚠️ ${result.error}` };
-          conv.messages.push(aiMsg);
-          saveMessageToServer(conv.id, aiMsg);
-        } else {
-          const aiMsg = { role:'ai', content: 'تفضلي، هاي الصورة:', generatedImage: { url: result.url } };
-          conv.messages.push(aiMsg);
-          saveMessageToServer(conv.id, {
-            role: 'ai',
-            content: 'تفضلي، هاي الصورة:',
-            imageUrl: result.imageUrl
-          });
+
+          const aiMsg = {
+            role:'ai',
+            content:
+              `⚠️ ${result.error}`
+          };
+
+          conv.messages.push(
+            aiMsg
+          );
+
+          saveMessageToServer(
+            conv.id,
+            aiMsg
+          );
+
+        }else{
+
+          const aiMsg = {
+            role:'ai',
+            content:
+              'تفضلي، عدّلت الصورة حسب طلبك:',
+            generatedImage:{
+              url:result.url
+            }
+          };
+
+          conv.messages.push(
+            aiMsg
+          );
+
+          saveMessageToServer(
+            conv.id,
+            {
+              role:'ai',
+              content:
+                'تفضلي، عدّلت الصورة حسب طلبك:',
+              imageUrl:
+                result.imageUrl
+            }
+          );
         }
+
         renderActiveChat();
-      });
+
+      }catch(err){
+
+        console.error(
+          'Image-to-Image error:',
+          err
+        );
+
+        typingEl.remove();
+
+        const aiMsg = {
+          role:'ai',
+          content:
+            '⚠️ صار خطأ أثناء تعديل الصورة.'
+        };
+
+        conv.messages.push(
+          aiMsg
+        );
+
+        saveMessageToServer(
+          conv.id,
+          aiMsg
+        );
+
+        renderActiveChat();
+      }
+
       return;
     }
 
-    let started = false;
-    getAIResponse(text, attachments, (partialText)=>{
-      if(!started){ bubbleEl.innerHTML = ''; started = true; }
-      bubbleEl.textContent = partialText;
-      scrollToBottom();
-    }).then(reply=>{
-      const aiMsg = { role:'ai', content: reply };
-      conv.messages.push(aiMsg);
-      saveMessageToServer(conv.id, aiMsg);
+
+    /*
+      الصورة ليست طلب تعديل.
+      نخلي Gemini يحللها مثل السابق.
+    */
+
+    let started =
+      false;
+
+    try{
+
+      const reply =
+        await getAIResponse(
+          text,
+          attachments,
+          partialText=>{
+
+            if(!started){
+
+              bubbleEl.innerHTML =
+                '';
+
+              started =
+                true;
+            }
+
+            bubbleEl.textContent =
+              partialText;
+
+            scrollToBottom();
+          }
+        );
+
+      const aiMsg = {
+        role:'ai',
+        content:reply
+      };
+
+      conv.messages.push(
+        aiMsg
+      );
+
+      saveMessageToServer(
+        conv.id,
+        aiMsg
+      );
+
       typingEl.remove();
+
       renderActiveChat();
-    });
-  });
+
+    }catch(err){
+
+      console.error(
+        'Attachment chat error:',
+        err
+      );
+
+      typingEl.remove();
+
+      const aiMsg = {
+        role:'ai',
+        content:
+          '⚠️ تعذر معالجة الملف أو الصورة.'
+      };
+
+      conv.messages.push(
+        aiMsg
+      );
+
+      saveMessageToServer(
+        conv.id,
+        aiMsg
+      );
+
+      renderActiveChat();
+    }
+
+    return;
+  }
+
+
+  /* =======================================================
+     TEXT ONLY
+  ======================================================= */
+
+  const localGuess =
+    looksLikeImageRequest(
+      text
+    );
+
+
+  try{
+
+    const intent =
+      await detectIntent(text);
+
+    const shouldGenerateImage =
+      localGuess ||
+      intent.isImageRequest;
+
+
+    /*
+      TEXT → IMAGE
+    */
+
+    if(shouldGenerateImage){
+
+      const promptForImage =
+        intent.englishPrompt ||
+        text;
+
+      const result =
+        await generateImage(
+          promptForImage
+        );
+
+      typingEl.remove();
+
+      if(result.error){
+
+        const aiMsg = {
+          role:'ai',
+          content:
+            `⚠️ ${result.error}`
+        };
+
+        conv.messages.push(
+          aiMsg
+        );
+
+        saveMessageToServer(
+          conv.id,
+          aiMsg
+        );
+
+      }else{
+
+        const aiMsg = {
+          role:'ai',
+          content:
+            'تفضلي، هاي الصورة:',
+          generatedImage:{
+            url:result.url
+          }
+        };
+
+        conv.messages.push(
+          aiMsg
+        );
+
+        saveMessageToServer(
+          conv.id,
+          {
+            role:'ai',
+            content:
+              'تفضلي، هاي الصورة:',
+            imageUrl:
+              result.imageUrl
+          }
+        );
+      }
+
+      renderActiveChat();
+
+      return;
+    }
+
+
+    /*
+      NORMAL CHAT
+    */
+
+    let started =
+      false;
+
+    const reply =
+      await getAIResponse(
+        text,
+        [],
+        partialText=>{
+
+          if(!started){
+
+            bubbleEl.innerHTML =
+              '';
+
+            started =
+              true;
+          }
+
+          bubbleEl.textContent =
+            partialText;
+
+          scrollToBottom();
+        }
+      );
+
+    const aiMsg = {
+      role:'ai',
+      content:reply
+    };
+
+    conv.messages.push(
+      aiMsg
+    );
+
+    saveMessageToServer(
+      conv.id,
+      aiMsg
+    );
+
+    typingEl.remove();
+
+    renderActiveChat();
+
+  }catch(err){
+
+    console.error(
+      'Send error:',
+      err
+    );
+
+    typingEl.remove();
+
+    const aiMsg = {
+      role:'ai',
+      content:
+        '⚠️ تعذر الاتصال بالسيرفر. حاول مرة ثانية.'
+    };
+
+    conv.messages.push(
+      aiMsg
+    );
+
+    saveMessageToServer(
+      conv.id,
+      aiMsg
+    );
+
+    renderActiveChat();
+  }
 }
 
-async function getAIResponse(userText, attachments, onChunk){
-  const conv = getActiveConv();
-  const history = conv ? conv.messages.map(m => ({ role: m.role, content: m.content, attachments: m.attachments })) : [{ role:'user', content:userText, attachments }];
 
-  try {
-    const res = await fetch(BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: history })
-    });
+/* =========================================================
+   GEMINI CHAT
+========================================================= */
+
+async function getAIResponse(
+  userText,
+  attachments,
+  onChunk
+){
+
+  const conv =
+    getActiveConv();
+
+  const history =
+    conv
+
+      ? conv.messages.map(
+          m => ({
+            role:m.role,
+            content:m.content,
+            attachments:m.attachments
+          })
+        )
+
+      : [
+          {
+            role:'user',
+            content:userText,
+            attachments
+          }
+        ];
+
+  try{
+
+    const res =
+      await fetch(
+        BACKEND_URL,
+        {
+          method:'POST',
+
+          headers:{
+            'Content-Type':
+              'application/json'
+          },
+
+          body:
+            JSON.stringify({
+              messages:history
+            })
+        }
+      );
 
     if(!res.ok){
-      const data = await res.json().catch(()=>({}));
-      return `⚠️ حدث خطأ من السيرفر: ${data.error || 'خطأ غير معروف'}`;
+
+      const data =
+        await res.json()
+          .catch(()=>({}));
+
+      return `
+        ⚠️ حدث خطأ من السيرفر:
+        ${data.error || 'خطأ غير معروف'}
+      `;
     }
 
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = '';
+    const reader =
+      res.body.getReader();
+
+    const decoder =
+      new TextDecoder();
+
+    let fullText =
+      '';
 
     while(true){
-      const { done, value } = await reader.read();
+
+      const {
+        done,
+        value
+      } =
+        await reader.read();
+
       if(done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      fullText += chunk;
-      if(onChunk) onChunk(fullText);
+
+      const chunk =
+        decoder.decode(
+          value,
+          {
+            stream:true
+          }
+        );
+
+      fullText +=
+        chunk;
+
+      if(onChunk){
+
+        onChunk(
+          fullText
+        );
+      }
     }
 
-    return fullText || 'ما وصل رد من السيرفر، جرب مرة ثانية.';
-  } catch(err){
-    return '⚠️ تعذر الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت وحاول مرة أخرى.';
+    return (
+      fullText ||
+      'ما وصل رد من السيرفر، جرب مرة ثانية.'
+    );
+
+  }catch(err){
+
+    console.error(
+      'getAIResponse error:',
+      err
+    );
+
+    return `
+      ⚠️ تعذر الاتصال بالسيرفر.
+      تأكد من اتصالك بالإنترنت وحاول مرة أخرى.
+    `;
   }
 }
+
+
+/* =========================================================
+   INTENT
+========================================================= */
 
 async function detectIntent(text){
-  try {
-    const res = await fetch(INTENT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
-    });
-    const data = await res.json();
+
+  try{
+
+    const res =
+      await fetch(
+        INTENT_URL,
+        {
+          method:'POST',
+
+          headers:{
+            'Content-Type':
+              'application/json'
+          },
+
+          body:
+            JSON.stringify({
+              text
+            })
+        }
+      );
+
+    const data =
+      await res.json();
+
     return data;
-  } catch(err){
-    return { isImageRequest: false, englishPrompt: '' };
+
+  }catch(err){
+
+    return {
+      isImageRequest:false,
+      englishPrompt:''
+    };
   }
 }
 
-async function generateImage(prompt){
-  try {
-    const res = await fetch(IMAGE_GEN_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken}`
-      },
-      body: JSON.stringify({ prompt })
-    });
-    const data = await res.json();
-    if(!res.ok || !data.imageUrl){
-      return { error: data.error || 'ما قدر يولد الصورة، جرب وصف مختلف.' };
-    }
-    if(typeof data.remainingCredits === 'number'){
-      updateCreditsLabel(data.remainingCredits);
-    }
-    return {
-      url: data.imageUrl,
-      imageUrl: data.imageUrl
+
+/* =========================================================
+   IMAGE GENERATION
+   TEXT → IMAGE
+   IMAGE → IMAGE
+========================================================= */
+
+async function generateImage(
+  prompt,
+  imageBase64 = null
+){
+
+  try{
+
+    const body = {
+      prompt
     };
-  } catch(err){
-    return { error: 'تعذر الاتصال بالسيرفر لتوليد الصورة.' };
+
+
+    /*
+      إذا في صورة:
+      نرسل Base64 للـ API.
+
+      إذا ما في صورة:
+      Text → Image.
+    */
+
+    if(imageBase64){
+
+      body.imageBase64 =
+        imageBase64;
+    }
+
+
+    const res =
+      await fetch(
+        IMAGE_GEN_URL,
+        {
+          method:'POST',
+
+          headers:{
+            'Content-Type':
+              'application/json',
+
+            'Authorization':
+              `Bearer ${authToken}`
+          },
+
+          body:
+            JSON.stringify(body)
+        }
+      );
+
+
+    const data =
+      await res.json()
+        .catch(()=>({}));
+
+
+    if(
+      !res.ok ||
+      !data.imageUrl
+    ){
+
+      return {
+        error:
+          data.error ||
+          'ما قدر يولد الصورة، جرب وصف مختلف.'
+      };
+    }
+
+
+    /*
+      تحديث الرصيد مباشرة
+    */
+
+    if(
+      typeof data.remainingCredits ===
+      'number'
+    ){
+
+      updateCreditsLabel(
+        data.remainingCredits
+      );
+    }
+
+
+    return {
+
+      url:
+        data.imageUrl,
+
+      imageUrl:
+        data.imageUrl,
+
+      mode:
+        data.mode ||
+        (
+          imageBase64
+            ? 'image-to-image'
+            : 'text-to-image'
+        )
+    };
+
+  }catch(err){
+
+    console.error(
+      'generateImage error:',
+      err
+    );
+
+    return {
+      error:
+        'تعذر الاتصال بالسيرفر لتوليد الصورة.'
+    };
   }
 }
+
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
 
 function toggleSidebar(){
-  const sb = document.getElementById('sidebar');
-  if(window.innerWidth<=820){ sb.classList.toggle('open'); }
-  else{ sb.classList.toggle('collapsed'); }
-}
-function closeSidebarMobile(){
-  document.getElementById('sidebar').classList.remove('open');
+
+  const sb =
+    document.getElementById(
+      'sidebar'
+    );
+
+  if(
+    window.innerWidth <= 820
+  ){
+
+    sb.classList.toggle(
+      'open'
+    );
+
+  }else{
+
+    sb.classList.toggle(
+      'collapsed'
+    );
+  }
 }
 
+
+function closeSidebarMobile(){
+
+  document
+    .getElementById('sidebar')
+    .classList.remove(
+      'open'
+    );
+}
+
+
+/* =========================================================
+   START
+========================================================= */
+
 init();
+
 </script>
+
 </body>
 </html>
