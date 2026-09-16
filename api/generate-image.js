@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   const IMAGE_COST = 1;
 
   try {
-    const { prompt } = req.body;
+    const { prompt, inputImage } = req.body;
     if (!prompt || typeof prompt !== 'string') {
       return res.status(400).json({ error: 'لازم ترسل وصف نصي للصورة' });
     }
@@ -60,7 +60,19 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'إعدادات Cloudflare ناقصة على السيرفر' });
     }
 
-    const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/stabilityai/stable-diffusion-xl-base-1.0`;
+    const isImg2Img = !!inputImage;
+    const modelPath = isImg2Img
+      ? '@cf/runwayml/stable-diffusion-v1-5-img2img'
+      : '@cf/stabilityai/stable-diffusion-xl-base-1.0';
+    const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelPath}`;
+
+    const requestBody = { prompt };
+    if (isImg2Img) {
+      // Cloudflare بتتوقع مصفوفة بايتات (byte array) مش base64 مباشرة
+      const inputBuffer = Buffer.from(inputImage, 'base64');
+      requestBody.image = Array.from(inputBuffer);
+      requestBody.strength = 0.7;
+    }
 
     const imgRes = await fetch(cfUrl, {
       method: 'POST',
@@ -68,7 +80,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${cfToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify(requestBody)
     });
 
     const contentType = imgRes.headers.get('content-type') || '';
