@@ -62,7 +62,7 @@ export default async function handler(req, res) {
 
     const isImg2Img = !!inputImage;
     const modelPath = isImg2Img
-      ? '@cf/runwayml/stable-diffusion-v1-5-img2img'
+      ? '@cf/lykon/dreamshaper-8-lcm'
       : '@cf/stabilityai/stable-diffusion-xl-base-1.0';
     const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelPath}`;
 
