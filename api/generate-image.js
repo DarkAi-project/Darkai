@@ -3,11 +3,14 @@ import { neon } from '@neondatabase/serverless';
 import jwt from 'jsonwebtoken';
 function getUserFromToken(req) {
   const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  const token = auth.startsWith('Bearer ')
+    ? auth.slice(7)
+    : null;
   if (!token) return null;
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
   } catch (e) {
+    console.error('JWT error:', e);
     return null;
   }
 }
@@ -15,17 +18,20 @@ function cleanBase64Image(inputImage) {
   if (!inputImage || typeof inputImage !== 'string') {
     return null;
   }
-  // إذا وصلت الصورة بالشكل:
-  // data:image/png;base64,AAAA...
-  // نشيل الـ prefix
+  // إزالة data:image/png;base64, أو data:image/jpeg;base64,
   if (inputImage.includes(',')) {
     return inputImage.split(',')[1];
   }
   return inputImage;
 }
 export default async function handler(req, res) {
+  // ==========================================
   // CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // ==========================================
+  res.setHeader(
+    'Access-Control-Allow-Origin',
+    '*'
+  );
   res.setHeader(
     'Access-Control-Allow-Methods',
     'POST, OPTIONS'
@@ -42,18 +48,18 @@ export default async function handler(req, res) {
       error: 'الطريقة غير مسموحة'
     });
   }
-  // ==============================
-  // 1. التحقق من تسجيل الدخول
-  // ==============================
+  // ==========================================
+  // Authentication
+  // ==========================================
   const user = getUserFromToken(req);
   if (!user) {
     return res.status(401).json({
       error: 'لازم تسجلي دخول'
     });
   }
-  // ==============================
-  // 2. الاتصال بقاعدة البيانات
-  // ==============================
+  // ==========================================
+  // Database
+  // ==========================================
   const dbUrl = process.env.DATABASE_URL;
   if (!dbUrl) {
     return res.status(500).json({
@@ -61,33 +67,35 @@ export default async function handler(req, res) {
     });
   }
   const sql = neon(dbUrl);
-  // تكلفة توليد الصورة
+  // تكلفة الصورة
   const IMAGE_COST = 1;
   let creditsDeducted = false;
   try {
-    // ==============================
-    // 3. قراءة البيانات
-    // ==============================
+    // ==========================================
+    // قراءة البيانات
+    // ==========================================
     const {
       prompt,
       inputImage,
-      strength = 0.7,
-      width = 768,
-      height = 768
+      strength = 0.7
     } = req.body || {};
-    if (!prompt || typeof prompt !== 'string') {
+    if (
+      !prompt ||
+      typeof prompt !== 'string' ||
+      !prompt.trim()
+    ) {
       return res.status(400).json({
         error: 'لازم ترسل وصف نصي للصورة'
       });
     }
-    // ==============================
-    // 4. خصم Credit بشكل آمن
-    // ==============================
+    // ==========================================
+    // خصم Credit بشكل آمن
+    // ==========================================
     const deducted = await sql`
       UPDATE users
       SET credits = credits - ${IMAGE_COST}
       WHERE id = ${user.userId}
-        AND credits >= ${IMAGE_COST}
+      AND credits >= ${IMAGE_COST}
       RETURNING credits
     `;
     if (deducted.length === 0) {
@@ -97,10 +105,11 @@ export default async function handler(req, res) {
       });
     }
     creditsDeducted = true;
-    const remainingCredits = deducted[0].credits;
-    // ==============================
-    // 5. Cloudflare settings
-    // ==============================
+    const remainingCredits =
+      deducted[0].credits;
+    // ==========================================
+    // Cloudflare Environment Variables
+    // ==========================================
     const cfAccountId =
       process.env.CLOUDFLARE_ACCOUNT_ID;
     const cfToken =
@@ -117,36 +126,30 @@ export default async function handler(req, res) {
           'إعدادات Cloudflare ناقصة على السيرفر'
       });
     }
-    // ==============================
-    // 6. تحديد نوع التوليد
-    // ==============================
+    // ==========================================
+    // تحديد Text-to-Image أو Image-to-Image
+    // ==========================================
     const isImg2Img =
       typeof inputImage === 'string' &&
       inputImage.length > 100;
-    /*
-      Text → Image
-      DreamShaper
-      Image → Image
-      Stable Diffusion v1.5 img2img
-      Cloudflare يوثق stable-diffusion-v1-5-img2img
-      كموديل مخصص للـ Image-to-Image.
-    */
-    const modelPath = isImg2Img
-      ? '@cf/runwayml/stable-diffusion-v1-5-img2img'
-      : '@cf/lykon/dreamshaper-8-lcm';
+    // ==========================================
+    // Cloudflare Model
+    // ==========================================
+    // DreamShaper 8 LCM
+    // يدعم Text-to-Image و Image-to-Image
+    const modelPath =
+      '@cf/lykon/dreamshaper-8-lcm';
     const cfUrl =
       `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelPath}`;
-    // ==============================
-    // 7. تجهيز Request
-    // ==============================
+    // ==========================================
+    // Request Body
+    // ==========================================
     const requestBody = {
-      prompt: prompt.trim(),
-      width: Number(width),
-      height: Number(height)
+      prompt: prompt.trim()
     };
-    // ==============================
-    // 8. Image-to-Image
-    // ==============================
+    // ==========================================
+    // Image-to-Image
+    // ==========================================
     if (isImg2Img) {
       const cleanedBase64 =
         cleanBase64Image(inputImage);
@@ -162,58 +165,89 @@ export default async function handler(req, res) {
         });
       }
       /*
-        Cloudflare يقبل image_b64
-        مباشرة في موديلات img2img.
-      */
-      requestBody.image_b64 = cleanedBase64;
+       * Cloudflare DreamShaper
+       * يقبل image_b64
+       */
+      requestBody.image_b64 =
+        cleanedBase64;
       /*
-        strength:
-        0.2 - يحافظ على الصورة الأصلية بشكل كبير
-        0.4 - تغيير متوسط
-        0.6 - تغيير واضح
-        0.8 - تغيير قوي
-        1.0 - تغيير كبير جدًا
-      */
-      const safeStrength = Math.min(
-        1,
-        Math.max(
-          0,
-          Number(strength) || 0.7
-        )
-      );
-      requestBody.strength = safeStrength;
-      // إعدادات إضافية للجودة
-      requestBody.num_steps = 20;
-      requestBody.guidance = 7.5;
+       * قوة التغيير:
+       *
+       * 0.2 = يحافظ على الأصل كثيرًا
+       * 0.4 = تغيير خفيف
+       * 0.6 = تغيير متوسط
+       * 0.7 = تغيير واضح
+       * 0.8 = تغيير قوي
+       * 1.0 = تغيير شديد
+       */
+      let safeStrength =
+        Number(strength);
+      if (Number.isNaN(safeStrength)) {
+        safeStrength = 0.7;
+      }
+      safeStrength =
+        Math.min(
+          1,
+          Math.max(
+            0,
+            safeStrength
+          )
+        );
+      requestBody.strength =
+        safeStrength;
     }
-    // ==============================
-    // 9. إرسال الطلب إلى Cloudflare
-    // ==============================
-    const imgRes = await fetch(cfUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${cfToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestBody)
-    });
-    // ==============================
-    // 10. قراءة نوع الاستجابة
-    // ==============================
+    // ==========================================
+    // إرسال الطلب إلى Cloudflare
+    // ==========================================
+    console.log(
+      'Dark AI image request:',
+      {
+        userId: user.userId,
+        img2img: isImg2Img,
+        model: modelPath,
+        strength: requestBody.strength || null
+      }
+    );
+    const imgRes = await fetch(
+      cfUrl,
+      {
+        method: 'POST',
+        headers: {
+          Authorization:
+            `Bearer ${cfToken}`,
+          'Content-Type':
+            'application/json'
+        },
+        body: JSON.stringify(
+          requestBody
+        )
+      }
+    );
+    // ==========================================
+    // قراءة Content-Type
+    // ==========================================
     const contentType =
-      imgRes.headers.get('content-type') || '';
-    // ==============================
-    // 11. التعامل مع أخطاء Cloudflare
-    // ==============================
+      imgRes.headers.get(
+        'content-type'
+      ) || '';
+    // ==========================================
+    // Cloudflare Error
+    // ==========================================
     if (!imgRes.ok) {
       let errorData = {};
       try {
-        errorData = await imgRes.json();
+        errorData =
+          await imgRes.json();
       } catch (e) {
         errorData = {};
       }
+      console.error(
+        'Cloudflare API Error:',
+        errorData
+      );
       const cloudflareMessage =
         errorData?.errors?.[0]?.message ||
+        errorData?.result?.error ||
         errorData?.error ||
         'خطأ أثناء توليد الصورة من Cloudflare';
       // Refund
@@ -223,31 +257,46 @@ export default async function handler(req, res) {
         WHERE id = ${user.userId}
       `;
       creditsDeducted = false;
-      console.error(
-        'Cloudflare error:',
-        errorData
-      );
       return res.status(500).json({
         error: cloudflareMessage
       });
     }
-    // ==============================
-    // 12. Cloudflare أحيانًا يرجع JSON
-    // ==============================
+    // ==========================================
+    // JSON Response
+    // ==========================================
     if (
-      contentType.includes('application/json')
+      contentType.includes(
+        'application/json'
+      )
     ) {
-      const data = await imgRes.json();
+      const data =
+        await imgRes.json();
+      console.log(
+        'Cloudflare JSON response received'
+      );
       /*
-        بعض موديلات Cloudflare قد ترجع
-        النتيجة داخل object.
-      */
+       * Cloudflare ممكن يرجع الصورة
+       * داخل result.image أو image
+       */
       let imageBase64 =
         data?.result?.image ||
         data?.image;
-      if (imageBase64) {
+      if (
+        imageBase64 &&
+        typeof imageBase64 === 'string'
+      ) {
+        // إزالة prefix إذا وجد
+        if (
+          imageBase64.includes(',')
+        ) {
+          imageBase64 =
+            imageBase64.split(',')[1];
+        }
         const imageBuffer =
-          Buffer.from(imageBase64, 'base64');
+          Buffer.from(
+            imageBase64,
+            'base64'
+          );
         if (
           !imageBuffer ||
           imageBuffer.length === 0
@@ -256,21 +305,26 @@ export default async function handler(req, res) {
             'Cloudflare returned empty image'
           );
         }
+        // ==========================================
+        // رفع إلى Vercel Blob
+        // ==========================================
         const filename =
           `generated/${Date.now()}-${Math.random()
             .toString(36)
             .slice(2, 8)}.png`;
-        const blob = await put(
-          filename,
-          imageBuffer,
-          {
-            access: 'public',
-            contentType: 'image/png',
-            token:
-              process.env.BLOB_READ_WRITE_TOKEN ||
-              process.env.public_READ_WRITE_TOKEN
-          }
-        );
+        const blob =
+          await put(
+            filename,
+            imageBuffer,
+            {
+              access: 'public',
+              contentType:
+                'image/png',
+              token:
+                process.env.BLOB_READ_WRITE_TOKEN ||
+                process.env.public_READ_WRITE_TOKEN
+            }
+          );
         return res.status(200).json({
           imageUrl: blob.url,
           mimeType: 'image/png',
@@ -279,14 +333,19 @@ export default async function handler(req, res) {
         });
       }
       // إذا Cloudflare رجع JSON بدون صورة
+      console.error(
+        'Cloudflare response:',
+        data
+      );
       throw new Error(
         data?.errors?.[0]?.message ||
+        data?.result?.error ||
         'Cloudflare لم يرجع صورة'
       );
     }
-    // ==============================
-    // 13. قراءة الصورة الخام
-    // ==============================
+    // ==========================================
+    // Raw Image Response
+    // ==========================================
     const arrayBuffer =
       await imgRes.arrayBuffer();
     if (
@@ -299,47 +358,70 @@ export default async function handler(req, res) {
     }
     const imageBuffer =
       Buffer.from(arrayBuffer);
-    // ==============================
-    // 14. تحديد MIME Type
-    // ==============================
-    let mimeType = 'image/png';
-    if (contentType.includes('jpeg')) {
-      mimeType = 'image/jpeg';
+    // ==========================================
+    // MIME Type
+    // ==========================================
+    let mimeType =
+      'image/png';
+    if (
+      contentType.includes(
+        'image/jpeg'
+      )
+    ) {
+      mimeType =
+        'image/jpeg';
     }
-    if (contentType.includes('webp')) {
-      mimeType = 'image/webp';
+    if (
+      contentType.includes(
+        'image/webp'
+      )
+    ) {
+      mimeType =
+        'image/webp';
     }
-    // ==============================
-    // 15. تحديد الامتداد
-    // ==============================
+    // ==========================================
+    // Extension
+    // ==========================================
     let ext = 'png';
-    if (mimeType === 'image/jpeg') {
+    if (
+      mimeType === 'image/jpeg'
+    ) {
       ext = 'jpg';
     }
-    if (mimeType === 'image/webp') {
+    if (
+      mimeType === 'image/webp'
+    ) {
       ext = 'webp';
     }
-    // ==============================
-    // 16. رفع الصورة إلى Vercel Blob
-    // ==============================
+    // ==========================================
+    // Vercel Blob Filename
+    // ==========================================
     const filename =
       `generated/${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 8)}.${ext}`;
-    const blob = await put(
-      filename,
-      imageBuffer,
-      {
-        access: 'public',
-        contentType: mimeType,
-        token:
-          process.env.BLOB_READ_WRITE_TOKEN ||
-          process.env.public_READ_WRITE_TOKEN
-      }
+    // ==========================================
+    // Upload
+    // ==========================================
+    const blob =
+      await put(
+        filename,
+        imageBuffer,
+        {
+          access: 'public',
+          contentType:
+            mimeType,
+          token:
+            process.env.BLOB_READ_WRITE_TOKEN ||
+            process.env.public_READ_WRITE_TOKEN
+        }
+      );
+    // ==========================================
+    // Success
+    // ==========================================
+    console.log(
+      'Dark AI image generated successfully'
     );
-    // ==============================
-    // 17. نجاح العملية
-    // ==============================
     return res.status(200).json({
       imageUrl: blob.url,
       mimeType,
@@ -348,12 +430,12 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error(
-      'Dark AI image generation error:',
+      'Dark AI server error:',
       err
     );
-    // ==============================
-    // 18. Refund إذا حصل فشل
-    // ==============================
+    // ==========================================
+    // Refund
+    // ==========================================
     if (creditsDeducted) {
       try {
         await sql`
@@ -361,7 +443,9 @@ export default async function handler(req, res) {
           SET credits = credits + ${IMAGE_COST}
           WHERE id = ${user.userId}
         `;
-        creditsDeducted = false;
+        console.log(
+          'Credit refunded successfully'
+        );
       } catch (refundErr) {
         console.error(
           'Refund error:',
