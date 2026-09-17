@@ -68,7 +68,8 @@ export default async function handler(req, res) {
 
     const requestBody = { prompt };
     if (isImg2Img) {
-      requestBody.image_b64 = inputImage;
+      const inputBuffer = Buffer.from(inputImage, 'base64');
+      requestBody.image = Array.from(inputBuffer);
       requestBody.strength = 0.7;
     }
 
