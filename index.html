@@ -609,10 +609,54 @@ function fileToBase64(file){
   });
 }
 
+function resizeImageFile(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = new Image();
+      img.onload = ()=>{
+        let { width, height } = img;
+        if(width > maxDim || height > maxDim){
+          if(width > height){
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({ base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 fileInput.addEventListener('change', async ()=>{
   const files = Array.from(fileInput.files);
   for(const file of files){
     if(selectedFiles.length >= 4){ break; }
+
+    if(file.type && file.type.startsWith('image/')){
+      try {
+        const resized = await resizeImageFile(file, 1280, 0.85);
+        selectedFiles.push({ name: file.name, mimeType: resized.mimeType, data: resized.base64 });
+      } catch(e){
+        alert(`تعذر معالجة الصورة "${file.name}"، جربي صورة تانية.`);
+      }
+      continue;
+    }
+
+    // ملفات غير الصور (PDF, نصوص) تضل بحدها الأصلي
     if(file.size > 4 * 1024 * 1024){
       alert(`الملف "${file.name}" أكبر من 4 ميجابايت، جرب ملف أصغر.`);
       continue;
