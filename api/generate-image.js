@@ -68,9 +68,7 @@ export default async function handler(req, res) {
 
     const requestBody = { prompt };
     if (isImg2Img) {
-      // Cloudflare بتتوقع مصفوفة بايتات (byte array) مش base64 مباشرة
-      const inputBuffer = Buffer.from(inputImage, 'base64');
-      requestBody.image = Array.from(inputBuffer);
+      requestBody.image_b64 = inputImage;
       requestBody.strength = 0.7;
     }
 
