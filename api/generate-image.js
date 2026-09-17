@@ -9,20 +9,36 @@ function getUserFromToken(req) {
   if (!token) return null;
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
-  } catch (e) {
-    console.error('JWT error:', e);
+  } catch (error) {
+    console.error('JWT error:', error);
     return null;
   }
 }
-function cleanBase64Image(inputImage) {
+function getBase64Image(inputImage) {
   if (!inputImage || typeof inputImage !== 'string') {
     return null;
   }
-  // إزالة data:image/png;base64, أو data:image/jpeg;base64,
+  // يدعم:
+  // data:image/png;base64,XXXX
+  // data:image/jpeg;base64,XXXX
+  // أو Base64 فقط
   if (inputImage.includes(',')) {
     return inputImage.split(',')[1];
   }
   return inputImage;
+}
+function getMimeType(inputImage) {
+  if (
+    typeof inputImage === 'string' &&
+    inputImage.startsWith('data:')
+  ) {
+    const match =
+      inputImage.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return 'image/png';
 }
 export default async function handler(req, res) {
   // ==========================================
@@ -67,12 +83,11 @@ export default async function handler(req, res) {
     });
   }
   const sql = neon(dbUrl);
-  // تكلفة الصورة
   const IMAGE_COST = 1;
   let creditsDeducted = false;
   try {
     // ==========================================
-    // قراءة البيانات
+    // Request Data
     // ==========================================
     const {
       prompt,
@@ -89,7 +104,7 @@ export default async function handler(req, res) {
       });
     }
     // ==========================================
-    // خصم Credit بشكل آمن
+    // Deduct Credit
     // ==========================================
     const deducted = await sql`
       UPDATE users
@@ -108,7 +123,7 @@ export default async function handler(req, res) {
     const remainingCredits =
       deducted[0].credits;
     // ==========================================
-    // Cloudflare Environment Variables
+    // Cloudflare Settings
     // ==========================================
     const cfAccountId =
       process.env.CLOUDFLARE_ACCOUNT_ID;
@@ -127,7 +142,7 @@ export default async function handler(req, res) {
       });
     }
     // ==========================================
-    // تحديد Text-to-Image أو Image-to-Image
+    // Detect Image-to-Image
     // ==========================================
     const isImg2Img =
       typeof inputImage === 'string' &&
@@ -135,25 +150,25 @@ export default async function handler(req, res) {
     // ==========================================
     // Cloudflare Model
     // ==========================================
-    // DreamShaper 8 LCM
-    // يدعم Text-to-Image و Image-to-Image
     const modelPath =
       '@cf/lykon/dreamshaper-8-lcm';
     const cfUrl =
       `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${modelPath}`;
     // ==========================================
-    // Request Body
+    // Base Request
     // ==========================================
     const requestBody = {
-      prompt: prompt.trim()
+      prompt: prompt.trim(),
+      num_steps: 20,
+      guidance: 7.5
     };
     // ==========================================
-    // Image-to-Image
+    // IMAGE TO IMAGE
     // ==========================================
     if (isImg2Img) {
-      const cleanedBase64 =
-        cleanBase64Image(inputImage);
-      if (!cleanedBase64) {
+      const base64 =
+        getBase64Image(inputImage);
+      if (!base64) {
         await sql`
           UPDATE users
           SET credits = credits + ${IMAGE_COST}
@@ -164,21 +179,36 @@ export default async function handler(req, res) {
           error: 'الصورة المرسلة غير صالحة'
         });
       }
+      let imageBuffer;
+      try {
+        imageBuffer =
+          Buffer.from(base64, 'base64');
+      } catch (error) {
+        throw new Error(
+          'تعذر تحويل الصورة إلى بيانات'
+        );
+      }
+      if (
+        !imageBuffer ||
+        imageBuffer.length === 0
+      ) {
+        throw new Error(
+          'الصورة المرسلة فارغة'
+        );
+      }
       /*
-       * Cloudflare DreamShaper
-       * يقبل image_b64
-       */
-      requestBody.image_b64 =
-        cleanedBase64;
-      /*
-       * قوة التغيير:
+       * Cloudflare documents the "image"
+       * parameter as an array of unsigned
+       * 8-bit integers.
        *
-       * 0.2 = يحافظ على الأصل كثيرًا
-       * 0.4 = تغيير خفيف
-       * 0.6 = تغيير متوسط
-       * 0.7 = تغيير واضح
-       * 0.8 = تغيير قوي
-       * 1.0 = تغيير شديد
+       * لذلك نرسل Buffer -> Array
+       */
+      requestBody.image =
+        Array.from(imageBuffer);
+      /*
+       * مهم:
+       * لا نرسل image_b64 مع image
+       * في نفس الطلب.
        */
       let safeStrength =
         Number(strength);
@@ -195,19 +225,17 @@ export default async function handler(req, res) {
         );
       requestBody.strength =
         safeStrength;
+      console.log(
+        'Dark AI IMG2IMG:',
+        {
+          imageBytes: imageBuffer.length,
+          strength: safeStrength
+        }
+      );
     }
     // ==========================================
-    // إرسال الطلب إلى Cloudflare
+    // Cloudflare Request
     // ==========================================
-    console.log(
-      'Dark AI image request:',
-      {
-        userId: user.userId,
-        img2img: isImg2Img,
-        model: modelPath,
-        strength: requestBody.strength || null
-      }
-    );
     const imgRes = await fetch(
       cfUrl,
       {
@@ -224,7 +252,7 @@ export default async function handler(req, res) {
       }
     );
     // ==========================================
-    // قراءة Content-Type
+    // Response Content Type
     // ==========================================
     const contentType =
       imgRes.headers.get(
@@ -238,14 +266,14 @@ export default async function handler(req, res) {
       try {
         errorData =
           await imgRes.json();
-      } catch (e) {
+      } catch (error) {
         errorData = {};
       }
       console.error(
-        'Cloudflare API Error:',
+        'Cloudflare Error:',
         errorData
       );
-      const cloudflareMessage =
+      const message =
         errorData?.errors?.[0]?.message ||
         errorData?.result?.error ||
         errorData?.error ||
@@ -258,7 +286,7 @@ export default async function handler(req, res) {
       `;
       creditsDeducted = false;
       return res.status(500).json({
-        error: cloudflareMessage
+        error: message
       });
     }
     // ==========================================
@@ -274,10 +302,6 @@ export default async function handler(req, res) {
       console.log(
         'Cloudflare JSON response received'
       );
-      /*
-       * Cloudflare ممكن يرجع الصورة
-       * داخل result.image أو image
-       */
       let imageBase64 =
         data?.result?.image ||
         data?.image;
@@ -285,7 +309,6 @@ export default async function handler(req, res) {
         imageBase64 &&
         typeof imageBase64 === 'string'
       ) {
-        // إزالة prefix إذا وجد
         if (
           imageBase64.includes(',')
         ) {
@@ -302,11 +325,11 @@ export default async function handler(req, res) {
           imageBuffer.length === 0
         ) {
           throw new Error(
-            'Cloudflare returned empty image'
+            'الصورة الناتجة فارغة'
           );
         }
         // ==========================================
-        // رفع إلى Vercel Blob
+        // Upload To Vercel Blob
         // ==========================================
         const filename =
           `generated/${Date.now()}-${Math.random()
@@ -327,14 +350,14 @@ export default async function handler(req, res) {
           );
         return res.status(200).json({
           imageUrl: blob.url,
-          mimeType: 'image/png',
+          mimeType:
+            'image/png',
           text: '',
           remainingCredits
         });
       }
-      // إذا Cloudflare رجع JSON بدون صورة
       console.error(
-        'Cloudflare response:',
+        'Unexpected Cloudflare JSON:',
         data
       );
       throw new Error(
@@ -359,7 +382,7 @@ export default async function handler(req, res) {
     const imageBuffer =
       Buffer.from(arrayBuffer);
     // ==========================================
-    // MIME Type
+    // MIME
     // ==========================================
     let mimeType =
       'image/png';
@@ -394,15 +417,12 @@ export default async function handler(req, res) {
       ext = 'webp';
     }
     // ==========================================
-    // Vercel Blob Filename
+    // Upload
     // ==========================================
     const filename =
       `generated/${Date.now()}-${Math.random()
         .toString(36)
         .slice(2, 8)}.${ext}`;
-    // ==========================================
-    // Upload
-    // ==========================================
     const blob =
       await put(
         filename,
@@ -417,7 +437,7 @@ export default async function handler(req, res) {
         }
       );
     // ==========================================
-    // Success
+    // SUCCESS
     // ==========================================
     console.log(
       'Dark AI image generated successfully'
@@ -428,13 +448,13 @@ export default async function handler(req, res) {
       text: '',
       remainingCredits
     });
-  } catch (err) {
+  } catch (error) {
     console.error(
-      'Dark AI server error:',
-      err
+      'Dark AI image server error:',
+      error
     );
     // ==========================================
-    // Refund
+    // REFUND
     // ==========================================
     if (creditsDeducted) {
       try {
@@ -444,17 +464,18 @@ export default async function handler(req, res) {
           WHERE id = ${user.userId}
         `;
         console.log(
-          'Credit refunded successfully'
+          'Credit refunded'
         );
-      } catch (refundErr) {
+      } catch (refundError) {
         console.error(
           'Refund error:',
-          refundErr
+          refundError
         );
       }
     }
     return res.status(500).json({
       error:
+        error?.message ||
         'حدث خطأ أثناء توليد الصورة. جرب مرة ثانية.'
     });
   }
