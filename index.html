@@ -755,30 +755,6 @@ async function handleSend(){
   const bubbleEl = typingEl.querySelector('.bubble');
 
   if(attachments.length > 0){
-    const imageAttachment = attachments.find(a => a.mimeType && a.mimeType.startsWith('image/'));
-
-    if(imageAttachment && text){
-      // في صورة مرفقة + نص → اعتبريها طلب تعديل صورة (Image-to-Image)
-      generateImage(text, imageAttachment.data).then(result=>{
-        typingEl.remove();
-        if(result.error){
-          const aiMsg = { role:'ai', content: `⚠️ ${result.error}` };
-          conv.messages.push(aiMsg);
-          saveMessageToServer(conv.id, aiMsg);
-        } else {
-          const aiMsg = { role:'ai', content: 'تفضلي، هاي الصورة المعدّلة:', generatedImage: { url: result.url } };
-          conv.messages.push(aiMsg);
-          saveMessageToServer(conv.id, {
-            role: 'ai',
-            content: 'تفضلي، هاي الصورة المعدّلة:',
-            imageUrl: result.imageUrl
-          });
-        }
-        renderActiveChat();
-      });
-      return;
-    }
-
     let started = false;
     getAIResponse(text, attachments, (partialText)=>{
       if(!started){ bubbleEl.innerHTML = ''; started = true; }
