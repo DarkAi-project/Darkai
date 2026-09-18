@@ -272,6 +272,11 @@ const CONVERSATIONS_URL = 'https://darkai-delta.vercel.app/api/conversations';
 const MESSAGES_URL = 'https://darkai-delta.vercel.app/api/messages';
 const CREDITS_URL = 'https://darkai-delta.vercel.app/api/credits';
 
+// ==========================================
+// كم رسالة قديمة أقصى نبعتها كـ context
+// ==========================================
+const MAX_HISTORY = 12;
+
 let conversations = [];
 let activeConvId = null;
 let selectedFiles = [];
@@ -811,9 +816,25 @@ async function handleSend(){
   });
 }
 
+// ==========================================
+// getAIResponse (معدّلة)
+// - تحد أقصى عدد رسائل قديمة تنبعت كـ context
+// - المرفقات (الصور Base64) تنبعت بس مع آخر
+//   رسالة، مش مع كل الرسائل القديمة بالمحادثة
+//   عشان ما يصير FUNCTION_PAYLOAD_TOO_LARGE
+// ==========================================
 async function getAIResponse(userText, attachments, onChunk){
   const conv = getActiveConv();
-  const history = conv ? conv.messages.map(m => ({ role: m.role, content: m.content, attachments: m.attachments })) : [{ role:'user', content:userText, attachments }];
+
+  const allMessages = conv ? conv.messages : [{ role: 'user', content: userText, attachments }];
+  const recentMessages = allMessages.slice(-MAX_HISTORY);
+
+  const lastIndex = recentMessages.length - 1;
+  const history = recentMessages.map((m, idx) => ({
+    role: m.role,
+    content: m.content,
+    attachments: idx === lastIndex ? m.attachments : undefined
+  }));
 
   try {
     const res = await fetch(BACKEND_URL, {
