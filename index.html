@@ -803,7 +803,7 @@ function buildMessageEl(m){
     : '';
 
   const speakBtn = (m.role==='ai' && m.content)
-    ? `<button class="speak-btn" onclick="speakText(${JSON.stringify(m.content)}, this)">🔊 استمع للرد</button>`
+    ? `<button class="speak-btn" type="button">🔊 استمع للرد</button>`
     : '';
 
   wrap.innerHTML = `
@@ -815,6 +815,12 @@ function buildMessageEl(m){
       ${genImg}
       ${speakBtn}
     </div>`;
+
+  const speakBtnEl = wrap.querySelector('.speak-btn');
+  if(speakBtnEl){
+    speakBtnEl.addEventListener('click', ()=> speakText(m.content, speakBtnEl));
+  }
+
   return wrap;
 }
 
