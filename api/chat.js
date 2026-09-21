@@ -44,24 +44,62 @@ export default async function handler(req, res) {
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
-    const geminiRes = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 4096
-        }
-      })
+    const requestBody = JSON.stringify({
+      contents,
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 4096
+      }
     });
 
+    // ==========================================
+    // إعادة المحاولة التلقائية
+    // بس للأخطاء المؤقتة (ازدحام/rate limit)
+    // 503 = مزدحم مؤقتًا، 429 = طلبات كتيرة بوقت قصير
+    // ==========================================
+    const RETRYABLE_STATUS = [503, 429];
+    const MAX_RETRIES = 2;
+    const RETRY_DELAY_MS = 800; // نصف ثانية تقريبًا، بتزيد شوي كل محاولة
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    let geminiRes = null;
+    let lastErrorData = {};
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      geminiRes = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: requestBody
+      });
+
+      if (geminiRes.ok) {
+        break; // نجح، اطلعي من الحلقة
+      }
+
+      const isRetryable = RETRYABLE_STATUS.includes(geminiRes.status);
+      const isLastAttempt = attempt === MAX_RETRIES;
+
+      if (!isRetryable || isLastAttempt) {
+        // خطأ نهائي (مش مؤقت) أو خلصت المحاولات
+        lastErrorData = await geminiRes.json().catch(() => ({}));
+        break;
+      }
+
+      // خطأ مؤقت وبعدنا عندنا محاولات: منستنى شوي ونعيد
+      console.log(`Gemini busy (status ${geminiRes.status}), retrying... attempt ${attempt + 1}/${MAX_RETRIES}`);
+      await sleep(RETRY_DELAY_MS * (attempt + 1)); // تأخير متزايد بسيط
+    }
+
     if (!geminiRes.ok) {
-      const errData = await geminiRes.json().catch(() => ({}));
-      return res.status(geminiRes.status).json({ error: errData?.error?.message || 'خطأ أثناء التواصل مع Gemini' });
+      console.error('Cloudflare/Gemini Error after retries:', lastErrorData);
+      const message =
+        lastErrorData?.error?.message ||
+        'الخدمة مزدحمة حاليًا، جربي بعد لحظات.';
+      return res.status(geminiRes.status).json({ error: message });
     }
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
