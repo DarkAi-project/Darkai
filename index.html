@@ -241,9 +241,15 @@
     100%{ box-shadow:0 0 0 0 rgba(255,77,77,0); }
   }
 
+  .sidebar-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.55);
+    z-index:15; backdrop-filter:blur(1px);
+  }
+
   @media (max-width:820px){
     .sidebar{ position:fixed; top:0; bottom:0; right:0; margin-right:-272px; box-shadow:0 0 40px rgba(0,0,0,.5); }
     .sidebar.open{ margin-right:0; }
+    .sidebar-backdrop.open{ display:block; }
     .suggestions{ grid-template-columns:1fr; }
     .chat-inner{ padding:20px 14px; }
     .bubble-wrap{ max-width:88%; }
@@ -381,6 +387,8 @@
   </main>
 
 </div>
+
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebarMobile()"></div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightboxImg" src="">
@@ -1312,11 +1320,17 @@ function stopSpeaking(){
 
 function toggleSidebar(){
   const sb = document.getElementById('sidebar');
-  if(window.innerWidth<=820){ sb.classList.toggle('open'); }
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if(window.innerWidth<=820){
+    sb.classList.toggle('open');
+    if(backdrop) backdrop.classList.toggle('open', sb.classList.contains('open'));
+  }
   else{ sb.classList.toggle('collapsed'); }
 }
 function closeSidebarMobile(){
   document.getElementById('sidebar').classList.remove('open');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if(backdrop) backdrop.classList.remove('open');
 }
 
 init();
