@@ -86,6 +86,11 @@
   .icon-btn:disabled{ opacity:.35; cursor:default; }
   .model-select{ display:flex; align-items:center; gap:7px; font-size:13.5px; font-weight:600; color:var(--text); background:var(--surface); border:1px solid var(--border); padding:7px 12px; border-radius:10px; cursor:pointer; }
   .model-select .badge{ font-size:10px; font-weight:700; color:var(--purple); background:rgba(176,107,255,.14); padding:2px 7px; border-radius:6px; }
+  .voice-select{
+    background:var(--surface); border:1px solid var(--border); color:var(--text-dim);
+    font-family:inherit; font-size:11.5px; padding:6px 8px; border-radius:9px;
+    max-width:96px; outline:none; cursor:pointer;
+  }
   .chat-scroll{ flex:1; overflow-y:auto; scroll-behavior:smooth; }
   .chat-inner{ max-width:720px; margin:0 auto; padding:28px 20px 10px; display:flex; flex-direction:column; gap:26px; }
   .hero{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; position:relative; }
@@ -327,6 +332,7 @@
           <span>Dark AI</span>
           <span class="badge">Nova-1</span>
         </div>
+        <select id="voiceSelect" class="voice-select" title="اختيار الصوت"></select>
       </div>
       <button class="icon-btn" onclick="startNewChat()" title="محادثة جديدة">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -1297,31 +1303,115 @@ async function sendVoiceMessage(attachment){
   typingEl.remove();
   renderActiveChat();
 
-  speakText(reply);
+  const lastSpeakBtn = chatInner.querySelector('.msg.ai:last-child .speak-btn');
+  speakText(reply, lastSpeakBtn);
+}
+
+let selectedVoiceURI = localStorage.getItem('darkai_voice_uri') || null;
+let currentSpeakBtn = null;
+
+function populateVoiceSelect(){
+  const select = document.getElementById('voiceSelect');
+  if(!select || !('speechSynthesis' in window)) return;
+  const voices = window.speechSynthesis.getVoices();
+  if(!voices || voices.length === 0) return;
+
+  const arabicVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('ar'));
+  const list = arabicVoices.length ? arabicVoices : voices;
+
+  select.innerHTML = list.map(v =>
+    `<option value="${v.voiceURI}">${v.name.replace(/^Microsoft |^Google /,'')}</option>`
+  ).join('');
+
+  if(selectedVoiceURI && list.some(v => v.voiceURI === selectedVoiceURI)){
+    select.value = selectedVoiceURI;
+  } else {
+    selectedVoiceURI = list[0].voiceURI;
+    select.value = selectedVoiceURI;
+  }
+}
+
+if('speechSynthesis' in window){
+  populateVoiceSelect();
+  window.speechSynthesis.onvoiceschanged = populateVoiceSelect;
+  const vs = document.getElementById('voiceSelect');
+  if(vs){
+    vs.addEventListener('change', (e)=>{
+      selectedVoiceURI = e.target.value;
+      localStorage.setItem('darkai_voice_uri', selectedVoiceURI);
+    });
+    vs.addEventListener('click', (e)=> e.stopPropagation());
+  }
 }
 
 function speakText(text, btn){
   if(!('speechSynthesis' in window) || !text) return;
+
+  // نفس الزرار يلي عم يحكي هلق: وقف مؤقت أو استكمل من نفس المكان
+  if(btn && currentSpeakBtn === btn){
+    if(window.speechSynthesis.speaking && !window.speechSynthesis.paused){
+      window.speechSynthesis.pause();
+      btn.textContent = '▶ استكمال';
+      btn.classList.remove('speaking');
+      return;
+    }
+    if(window.speechSynthesis.paused){
+      window.speechSynthesis.resume();
+      btn.textContent = '⏸ إيقاف مؤقت';
+      btn.classList.add('speaking');
+      return;
+    }
+  }
+
+  // بدء رد جديد: نوقف أي رد تاني كان يتحكى قبله
   window.speechSynthesis.cancel();
+  if(currentSpeakBtn && currentSpeakBtn !== btn){
+    currentSpeakBtn.textContent = '🔊 استمع للرد';
+    currentSpeakBtn.classList.remove('speaking');
+  }
+
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'ar-SA';
   utter.rate = 1;
 
   const voices = window.speechSynthesis.getVoices();
-  const arabicVoice = voices.find(v => v.lang && v.lang.startsWith('ar'));
-  if(arabicVoice) utter.voice = arabicVoice;
+  let chosenVoice = null;
+  if(selectedVoiceURI){
+    chosenVoice = voices.find(v => v.voiceURI === selectedVoiceURI);
+  }
+  if(!chosenVoice){
+    chosenVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith('ar'));
+  }
+  if(chosenVoice) utter.voice = chosenVoice;
+
+  currentSpeakBtn = btn || null;
 
   if(btn){
+    btn.textContent = '⏸ إيقاف مؤقت';
     btn.classList.add('speaking');
-    utter.onend = ()=> btn.classList.remove('speaking');
-    utter.onerror = ()=> btn.classList.remove('speaking');
   }
+
+  const resetBtn = ()=>{
+    if(btn){
+      btn.textContent = '🔊 استمع للرد';
+      btn.classList.remove('speaking');
+    }
+    if(currentSpeakBtn === btn){ currentSpeakBtn = null; }
+  };
+
+  utter.onend = resetBtn;
+  utter.onerror = resetBtn;
 
   window.speechSynthesis.speak(utter);
 }
 
 function stopSpeaking(){
   if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if(currentSpeakBtn){
+    currentSpeakBtn.textContent = '🔊 استمع للرد';
+    currentSpeakBtn.classList.remove('speaking');
+    currentSpeakBtn = null;
+  }
 }
 
 function toggleSidebar(){
