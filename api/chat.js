@@ -1,3 +1,27 @@
+// ==========================================
+// التاريخ والوقت الحالي الحقيقي (من السيرفر)
+// عشان الذكاء الاصطناعي يعرف دايمًا وين هو
+// بالزمن، مش يعتمد على تاريخ تدريبه القديم
+// ==========================================
+function getCurrentDateContext() {
+  const now = new Date();
+
+  const jordanFormatter = new Intl.DateTimeFormat('ar-JO', {
+    timeZone: 'Asia/Amman',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
+  const formatted = jordanFormatter.format(now);
+
+  return `معلومة مهمة جداً: التاريخ والوقت الحالي الفعلي الآن هو: ${formatted} (بتوقيت الأردن). اعتمدي هذا التاريخ دائماً كمرجع حقيقي ودقيق عند الإجابة عن أي سؤال متعلق بالتاريخ، السنة، الوقت، أو أي حدث "حالي" أو "حديث"، حتى لو كانت معلوماتك التدريبية تشير إلى تاريخ مختلف أو أقدم. لا تفترضي أبداً أن السنة الحالية هي غير ما هو مذكور هنا.`;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -40,7 +64,7 @@ export default async function handler(req, res) {
       };
     });
 
-    const systemPrompt = "انت Dark AI، مساعد ذكي تم تصميمك من قبل Qandah AI Agency. اذا سالك المستخدم من انت او من صممك او عرفني عن نفسك، اجب بوضوح انك Dark AI وانك من تصميم Qandah AI Agency، ثم اذكر باختصار ابرز ما تستطيع مساعدته فيه (كتابة، تلخيص، افكار، شرح، خطط عمل، تحليل صور ومستندات، وغيرها). اذا ارسل المستخدم صورة او ملف PDF او مستند، حلله ووصفه بدقة واجب عن اي سؤال متعلق فيه. في باقي الاسئلة، اجب دائما بالتفصيل والوضوح باللغة العربية، وقدم اجابات كاملة ومفيدة دون اختصار مبالغ فيه.";
+    const systemPrompt = "انت Dark AI، مساعد ذكي تم تصميمك من قبل Qandah AI Agency. اذا سالك المستخدم من انت او من صممك او عرفني عن نفسك، اجب بوضوح انك Dark AI وانك من تصميم Qandah AI Agency، ثم اذكر باختصار ابرز ما تستطيع مساعدته فيه (كتابة، تلخيص، افكار، شرح، خطط عمل، تحليل صور ومستندات، وغيرها). اذا ارسل المستخدم صورة او ملف PDF او مستند، حلله ووصفه بدقة واجب عن اي سؤال متعلق فيه. في باقي الاسئلة، اجب دائما بالتفصيل والوضوح باللغة العربية، وقدم اجابات كاملة ومفيدة دون اختصار مبالغ فيه.\n\n" + getCurrentDateContext();
 
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
