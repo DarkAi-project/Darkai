@@ -1540,7 +1540,6 @@
 </div>
 
 <script>
-
 const BACKEND_URL = 'https://darkai-delta.vercel.app/api/chat';
 const IMAGE_GEN_URL = 'https://darkai-delta.vercel.app/api/generate-image';
 
@@ -1574,10 +1573,6 @@ let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
 
-
-/* ==========================================
-   عناصر الصفحة
-========================================== */
 
 const chatScroll =
   document.getElementById('chatScroll');
@@ -1636,10 +1631,6 @@ const authSub =
 const authSwitch =
   document.getElementById('authSwitch');
 
-
-/* ==========================================
-   INIT
-========================================== */
 
 async function init(){
 
@@ -1714,10 +1705,6 @@ function showApp(){
 }
 
 
-/* ==========================================
-   CREDITS
-========================================== */
-
 async function refreshCredits(){
 
   try{
@@ -1755,10 +1742,6 @@ function updateCreditsLabel(credits){
   }
 }
 
-
-/* ==========================================
-   AUTH
-========================================== */
 
 function toggleAuthMode(){
 
@@ -1913,10 +1896,6 @@ authForm.addEventListener(
 );
 
 
-/* ==========================================
-   LOGOUT
-========================================== */
-
 function logout(){
 
   stopSpeaking();
@@ -1936,10 +1915,6 @@ function logout(){
   showAuthScreen();
 }
 
-
-/* ==========================================
-   CONVERSATIONS
-========================================== */
 
 async function loadConversationsFromServer(){
 
@@ -2090,10 +2065,6 @@ async function startNewChat(){
   }
 }
 
-
-/* ==========================================
-   RENDER CONVERSATIONS
-========================================== */
 
 function renderConvList(){
 
@@ -2306,10 +2277,6 @@ function renderActiveChat(){
 }
 
 
-/* ==========================================
-   ATTACHMENTS
-========================================== */
-
 function fileIconSvg(){
 
   return `
@@ -2402,10 +2369,6 @@ function attachmentsHtml(atts){
 }
 
 
-/* ==========================================
-   FORMAT MESSAGE
-========================================== */
-
 function formatMessageContent(text){
 
   if(!text) return '';
@@ -2495,10 +2458,6 @@ function copyCode(id,btn){
     .catch(()=>{});
 }
 
-
-/* ==========================================
-   MESSAGE ELEMENT
-========================================== */
 
 function buildMessageEl(m){
 
@@ -2652,10 +2611,6 @@ function scrollToBottom(){
 }
 
 
-/* ==========================================
-   PROMPTS
-========================================== */
-
 function fillPrompt(el){
 
   composer.value =
@@ -2668,10 +2623,6 @@ function fillPrompt(el){
   composer.focus();
 }
 
-
-/* ==========================================
-   LIGHTBOX
-========================================== */
 
 function openLightbox(src){
 
@@ -2692,10 +2643,6 @@ function closeLightbox(){
   ).classList.remove('open');
 }
 
-
-/* ==========================================
-   DOWNLOAD IMAGE
-========================================== */
 
 async function downloadImage(
   url,
@@ -2755,10 +2702,6 @@ async function downloadImage(
   }
 }
 
-
-/* ==========================================
-   FILES
-========================================== */
 
 function fileToBase64(file){
 
@@ -3076,10 +3019,6 @@ composer.addEventListener(
 );
 
 
-/* ==========================================
-   IMAGE REQUEST DETECTION
-========================================== */
-
 function normalizeArabic(s){
 
   return s
@@ -3125,10 +3064,6 @@ function looksLikeImageRequest(text){
   );
 }
 
-
-/* ==========================================
-   SEND MESSAGE
-========================================== */
 
 async function handleSend(){
 
@@ -3423,10 +3358,6 @@ async function handleSend(){
 }
 
 
-/* ==========================================
-   AI CHAT
-========================================== */
-
 async function getAIResponse(
   userText,
   attachments,
@@ -3468,6 +3399,11 @@ async function getAIResponse(
       })
     );
 
+  // مهلة زمنية 25 ثانية: لو السيرفر ما رد، منوقف
+  // الطلب لحالنا بدل ما تضل الواجهة "عم تحمّل" للأبد
+  const controller = new AbortController();
+  const timeoutId = setTimeout(()=> controller.abort(), 25000);
+
   try{
 
     const res =
@@ -3483,9 +3419,13 @@ async function getAIResponse(
 
           body:JSON.stringify({
             messages:history
-          })
+          }),
+
+          signal: controller.signal
         }
       );
+
+    clearTimeout(timeoutId);
 
     if(!res.ok){
 
@@ -3537,6 +3477,12 @@ async function getAIResponse(
 
   }catch(err){
 
+    clearTimeout(timeoutId);
+
+    if(err.name === 'AbortError'){
+      return '⚠️ استغرق السيرفر وقت طويل جداً للرد (أكثر من 25 ثانية)، على الأغلب Gemini مزدحم حالياً. جربي مرة ثانية بعد شوي.';
+    }
+
     return (
       '⚠️ تعذر الاتصال بالسيرفر. ' +
       'تأكد من اتصالك بالإنترنت وحاول مرة أخرى.'
@@ -3544,10 +3490,6 @@ async function getAIResponse(
   }
 }
 
-
-/* ==========================================
-   INTENT
-========================================== */
 
 async function detectIntent(text){
 
@@ -3584,10 +3526,6 @@ async function detectIntent(text){
   }
 }
 
-
-/* ==========================================
-   IMAGE GENERATION
-========================================== */
 
 async function generateImage(
   prompt,
@@ -3662,10 +3600,6 @@ async function generateImage(
   }
 }
 
-
-/* ==========================================
-   VOICE INPUT / MICROPHONE
-========================================== */
 
 function getSupportedAudioMime(){
 
@@ -4051,11 +3985,6 @@ async function sendVoiceMessage(
       '.msg.ai:last-child .speak-btn'
     );
 
-  /*
-    بعد الرسالة الصوتية،
-    Dark AI يقرأ الرد تلقائياً
-    باستخدام Gemini TTS.
-  */
   speakText(
     reply,
     lastSpeakBtn
@@ -4063,15 +3992,6 @@ async function sendVoiceMessage(
 }
 
 
-/* =========================================================
-   GEMINI TTS
-   هذا الجزء هو التغيير الرئيسي
-========================================================= */
-
-
-/*
-  أصوات Gemini TTS الموجودة عندك في السيرفر.
-*/
 const GEMINI_VOICES = [
   {
     id:'Kore',
@@ -4116,40 +4036,20 @@ const GEMINI_VOICES = [
 ];
 
 
-/*
-  الصوت الافتراضي.
-  نخليه Kore لأنه أيضًا الافتراضي
-  الموجود في backend.
-*/
 let selectedGeminiVoice =
   localStorage.getItem(
     'darkai_gemini_voice'
   ) || 'Kore';
 
 
-/*
-  الصوت الحالي الذي يتم تشغيله.
-*/
 let currentAudio = null;
 
 
-/*
-  الزر المرتبط بالصوت الحالي.
-*/
 let currentSpeakBtn = null;
 
 
-/*
-  رقم طلب TTS الحالي.
-  يفيد لمنع استبدال صوت قديم
-  بصوت جديد إذا المستخدم ضغط بسرعة.
-*/
 let ttsRequestId = 0;
 
-
-/* ==========================================
-   تعبئة قائمة أصوات Gemini
-========================================== */
 
 function populateVoiceSelect(){
 
@@ -4200,10 +4100,6 @@ function populateVoiceSelect(){
 }
 
 
-/* ==========================================
-   تغيير صوت Gemini
-========================================== */
-
 const voiceSelect =
   document.getElementById(
     'voiceSelect'
@@ -4225,11 +4121,6 @@ if(voiceSelect){
         selectedGeminiVoice
       );
 
-      /*
-        إذا في صوت شغال حاليًا،
-        نوقفه حتى الصوت الجديد
-        يستخدم في الطلب القادم.
-      */
       stopSpeaking();
     }
   );
@@ -4241,18 +4132,11 @@ if(voiceSelect){
 }
 
 
-/* ==========================================
-   تحويل نص إلى صوت عن طريق Gemini
-========================================== */
-
 async function generateGeminiSpeech(
   text,
   voiceName
 ){
 
-  /*
-    تنظيف النص.
-  */
   const cleanText =
     String(text || '').trim();
 
@@ -4262,37 +4146,46 @@ async function generateGeminiSpeech(
     );
   }
 
-  /*
-    نرسل النص والصوت للسيرفر.
-  */
-  const res =
-    await fetch(
-      TTS_URL,
-      {
-        method:'POST',
+  const ttsController = new AbortController();
+  const ttsTimeoutId = setTimeout(()=> ttsController.abort(), 20000);
 
-        headers:{
-          'Content-Type':
-            'application/json',
+  let res;
+  try{
+    res =
+      await fetch(
+        TTS_URL,
+        {
+          method:'POST',
 
-          'Authorization':
-            `Bearer ${authToken}`
-        },
+          headers:{
+            'Content-Type':
+              'application/json',
 
-        body:JSON.stringify({
+            'Authorization':
+              `Bearer ${authToken}`
+          },
 
-          text:
-            cleanText.slice(0,3000),
+          body:JSON.stringify({
 
-          voiceName:
-            voiceName || 'Kore'
-        })
-      }
-    );
+            text:
+              cleanText.slice(0,3000),
 
-  /*
-    محاولة قراءة JSON.
-  */
+            voiceName:
+              voiceName || 'Kore'
+          }),
+
+          signal: ttsController.signal
+        }
+      );
+  }catch(fetchErr){
+    if(fetchErr.name === 'AbortError'){
+      throw new Error('استغرق توليد الصوت وقت طويل جداً، جربي مرة ثانية.');
+    }
+    throw fetchErr;
+  }finally{
+    clearTimeout(ttsTimeoutId);
+  }
+
   const data =
     await res.json()
       .catch(
@@ -4317,18 +4210,10 @@ async function generateGeminiSpeech(
     );
   }
 
-  /*
-    الـ backend يرجع:
-    audio = Base64
-    mimeType = audio/wav
-  */
   const mimeType =
     data.mimeType ||
     'audio/wav';
 
-  /*
-    تحويل Base64 إلى Blob.
-  */
   const byteCharacters =
     atob(data.audio);
 
@@ -4379,9 +4264,6 @@ async function generateGeminiSpeech(
       }
     );
 
-  /*
-    إنشاء URL مؤقت للصوت.
-  */
   const audioUrl =
     URL.createObjectURL(
       blob
@@ -4390,10 +4272,6 @@ async function generateGeminiSpeech(
   return audioUrl;
 }
 
-
-/* ==========================================
-   تشغيل صوت Gemini
-========================================== */
 
 async function speakText(
   text,
@@ -4405,11 +4283,6 @@ async function speakText(
   }
 
 
-  /*
-    إذا ضغط المستخدم على نفس الزر
-    والصوت شغال:
-    Pause
-  */
   if(
     btn &&
     currentSpeakBtn === btn &&
@@ -4434,10 +4307,6 @@ async function speakText(
     }
 
 
-    /*
-      إذا الصوت متوقف مؤقتًا:
-      Resume
-    */
     if(
       currentAudio.paused &&
       !currentAudio.ended
@@ -4467,29 +4336,17 @@ async function speakText(
   }
 
 
-  /*
-    إيقاف أي صوت سابق.
-  */
   stopSpeaking();
 
 
-  /*
-    رقم طلب جديد.
-  */
   const requestId =
     ++ttsRequestId;
 
 
-  /*
-    حفظ الزر الحالي.
-  */
   currentSpeakBtn =
     btn || null;
 
 
-  /*
-    حالة تحميل.
-  */
   if(btn){
 
     btn.textContent =
@@ -4503,9 +4360,6 @@ async function speakText(
 
   try{
 
-    /*
-      توليد الصوت من Gemini.
-    */
     const audioUrl =
       await generateGeminiSpeech(
         text,
@@ -4513,11 +4367,6 @@ async function speakText(
       );
 
 
-    /*
-      إذا صار طلب أحدث
-      أثناء انتظار الطلب السابق،
-      نتجاهل القديم.
-    */
     if(
       requestId !== ttsRequestId
     ){
@@ -4530,9 +4379,6 @@ async function speakText(
     }
 
 
-    /*
-      إنشاء Audio.
-    */
     const audio =
       new Audio();
 
@@ -4543,16 +4389,10 @@ async function speakText(
       audioUrl;
 
 
-    /*
-      تخزين الصوت الحالي.
-    */
     currentAudio =
       audio;
 
 
-    /*
-      انتهاء الصوت.
-    */
     audio.onended = ()=>{
 
       URL.revokeObjectURL(
@@ -4583,9 +4423,6 @@ async function speakText(
     };
 
 
-    /*
-      خطأ تشغيل الصوت.
-    */
     audio.onerror = ()=>{
 
       console.error(
@@ -4624,9 +4461,6 @@ async function speakText(
     };
 
 
-    /*
-      بدأ تشغيل الصوت.
-    */
     if(btn){
 
       btn.textContent =
@@ -4642,9 +4476,6 @@ async function speakText(
     }
 
 
-    /*
-      تشغيل الصوت.
-    */
     await audio.play();
 
   }catch(err){
@@ -4676,9 +4507,6 @@ async function speakText(
         null;
     }
 
-    /*
-      إظهار رسالة واضحة للمستخدم.
-    */
     const message =
       err?.message ||
       'تعذر توليد الصوت من Gemini';
@@ -4691,22 +4519,11 @@ async function speakText(
 }
 
 
-/* ==========================================
-   إيقاف الصوت
-========================================== */
-
 function stopSpeaking(){
 
-  /*
-    إلغاء أي طلب TTS
-    قيد الانتظار.
-  */
   ttsRequestId++;
 
 
-  /*
-    إيقاف Audio الحالي.
-  */
   if(currentAudio){
 
     try{
@@ -4718,9 +4535,6 @@ function stopSpeaking(){
 
     }catch(e){}
 
-    /*
-      حذف المصدر.
-    */
     try{
 
       currentAudio.removeAttribute(
@@ -4733,9 +4547,6 @@ function stopSpeaking(){
   }
 
 
-  /*
-    إعادة الزر لحالته الطبيعية.
-  */
   if(currentSpeakBtn){
 
     currentSpeakBtn.textContent =
@@ -4755,10 +4566,6 @@ function stopSpeaking(){
     null;
 }
 
-
-/* ==========================================
-   SIDEBAR
-========================================== */
 
 function toggleSidebar(){
 
@@ -4819,13 +4626,8 @@ function closeSidebarMobile(){
 }
 
 
-/* ==========================================
-   START
-========================================== */
-
 init();
 
 </script>
-
 </body>
 </html>
